@@ -11,8 +11,9 @@ use std::ops::Div;
 
 use std::fmt;
 
-
-struct Vec3 (f64, f64, f64);
+struct Vec3(f64, f64, f64);
+use Vec3 as Point3;
+use Vec3 as Color;
 
 impl Vec3 {
 
@@ -158,9 +159,64 @@ impl Div<f64> for Vec3 {
     }
 }
 
-fn main() {
-    let a = Vec3(1.0, 2.0, 3.0);
-    let b = Vec3(2.0, 3.0, 4.0);
-    let c : Vec3 = 2.0*a;
-    println!("This is my vectpr: {}", c);
+fn first_image() {
+    // Image
+    const IMAGE_WIDTH: u32 = 256;
+    const IMAGE_HEIGTH: u32 = 256;
+
+    // Render
+    print!("P3\n{} {}\n255\n", IMAGE_WIDTH, IMAGE_HEIGTH);
+
+    for j in (0..256).rev() {
+        eprintln!("Scanlines remaining: {}", j);
+        for i in 0..256 {
+            let r: f32 = i as f32/(IMAGE_WIDTH-1) as f32;
+            let g: f32 = j as f32/(IMAGE_HEIGTH-1) as f32;
+            let b: f32 = 0.25;
+
+            let ir: u32 = (255.999 * r) as u32;
+            let ig: u32 = (255.999 * g) as u32;
+            let ib: u32 = (255.999 * b) as u32;
+
+            println!("{} {} {}", ir, ig, ib)
+        }
+    }
+
+    eprintln!("Done. ");
 }
+
+fn second_image() {
+    // Image
+    const IMAGE_WIDTH: u32 = 256;
+    const IMAGE_HEIGTH: u32 = 256;
+
+    // Render
+    print!("P3\n{} {}\n255\n", IMAGE_WIDTH, IMAGE_HEIGTH);
+
+    for j in (0..256).rev() {
+        eprintln!("Scanlines remaining: {}", j);
+        for i in 0..256 {
+            let pixel_color: Color = Color(i as f64/(IMAGE_WIDTH-1) as f64, j as f64/(IMAGE_HEIGTH-1) as f64, 0.25 as f64);
+            write_color(pixel_color);
+        }
+    }
+
+    eprintln!("Done. ");
+}
+
+fn write_color(pixel_color: Color) {
+    println!("{} {} {}", 
+        (255.999 * pixel_color.x()) as u64, 
+        (255.999 * pixel_color.y()) as u64,
+        (255.999 * pixel_color.z()) as u64)
+}
+
+fn main() {
+    // let a = Vec3(1.0, 2.0, 3.0);
+    // let b = Vec3(2.0, 3.0, 4.0);
+    // let c : Vec3 = 2.0*a;
+    // println!("This is my vector: {}", c);
+    second_image();
+}
+
+
