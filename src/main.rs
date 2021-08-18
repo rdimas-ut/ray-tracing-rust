@@ -11,10 +11,16 @@ use std::ops::Div;
 use std::vec::Vec;
 use std::rc::Rc;
 
+use rand::Rng;
+use rand::distributions::Uniform;
+
+use std::default::Default;
+use std::f64::MAX;
+
 use std::fmt;
 
 // Constants
-const INFINITY: f64 = 100000000000000000.0;
+const INFINITY: f64 = MAX;
 const PI: f64 = 3.1415926535897932385;
 
 // Utility Functions
@@ -61,6 +67,14 @@ impl Vec3 {
     fn unit_vector(v: Vec3) -> Vec3 {
         let k = v.length();
         v / k
+    }
+
+    fn random() -> Vec3 {
+        Vec3(random_double(), random_double(), random_double())
+    }
+
+    fn random_range(min: f64, max: f64) -> Vec3 {
+        Vec3(random_double_range(min, max), random_double_range(min, max), random_double_range(min, max))
     }
 }
 
@@ -284,66 +298,194 @@ impl Hittable for HittableList {
     }
 }
 
-fn first_image() {
-    // Image
-    const IMAGE_WIDTH: u32 = 256;
-    const IMAGE_HEIGTH: u32 = 256;
-
-    // Render
-    print!("P3\n{} {}\n255\n", IMAGE_WIDTH, IMAGE_HEIGTH);
-
-    for j in (0..256).rev() {
-        eprintln!("Scanlines remaining: {}", j);
-        for i in 0..256 {
-            let r: f32 = i as f32/(IMAGE_WIDTH-1) as f32;
-            let g: f32 = j as f32/(IMAGE_HEIGTH-1) as f32;
-            let b: f32 = 0.25;
-
-            let ir: u32 = (255.999 * r) as u32;
-            let ig: u32 = (255.999 * g) as u32;
-            let ib: u32 = (255.999 * b) as u32;
-
-            println!("{} {} {}", ir, ig, ib)
-        }
-    }
-
-    eprintln!("Done. ");
+fn random_double() -> f64 {
+    let a: f64 = rand::thread_rng().gen_range(0.0..1.0);
+    a
 }
 
-fn second_image() {
-    // Image
-    const IMAGE_WIDTH: u32 = 256;
-    const IMAGE_HEIGTH: u32 = 256;
-
-    // Render
-    print!("P3\n{} {}\n255\n", IMAGE_WIDTH, IMAGE_HEIGTH);
-
-    for j in (0..256).rev() {
-        eprintln!("Scanlines remaining: {}", j);
-        for i in 0..256 {
-            let pixel_color: Color = Color(i as f64/(IMAGE_WIDTH-1) as f64, j as f64/(IMAGE_HEIGTH-1) as f64, 0.25 as f64);
-            write_color(pixel_color);
-        }
-    }
-
-    eprintln!("Done. ");
+fn random_double_range(min: f64, max: f64) -> f64 {
+    let a: f64 = rand::thread_rng().gen_range(0.0..1.0);
+    min + (max - min)*a
 }
 
-fn third_image() {
+
+#[derive(Copy, Clone)]
+struct Camera {
+    origin: Point3,
+    lower_left_corner: Point3,
+    horizontal: Vec3,
+    vertical: Vec3,
+}
+
+impl Default for Camera {
+    fn default() -> Self {
+        {
+            const ASPECT_RATIO: f64 = 16.0 / 9.0;
+            const VIEWPORT_HEIGHT: f64 = 2.0;
+            const VIEWPORT_WIDTH: f64 = ASPECT_RATIO * VIEWPORT_HEIGHT;
+            const FOCAL_LENGTH: f64 = 1.0;
+
+            let hor: Vec3 = Vec3(VIEWPORT_WIDTH, 0.0, 0.0);
+            let ver: Vec3 = Vec3(0.0, VIEWPORT_HEIGHT, 0.0);
+            
+            Camera {
+                origin: Point3(0.0, 0.0, 0.0),
+                horizontal: Vec3(VIEWPORT_WIDTH, 0.0, 0.0),
+                vertical: Vec3(0.0, VIEWPORT_HEIGHT, 0.0),
+                lower_left_corner: Point3(0.0, 0.0, 0.0) - hor/2.0 - ver/2.0 - Vec3(0.0, 0.0, FOCAL_LENGTH)
+            }
+        }
+    }
+}
+
+impl Camera {
+    fn get_ray(&self, u: f64, v: f64) -> Ray {
+        Ray {
+            origin: self.origin,
+            direction: self.lower_left_corner + u*self.horizontal + v*self.vertical - self.origin 
+        }
+    }
+}
+
+
+fn clamp(x: f64, min: f64, max: f64) -> f64 {
+    if x < min { return min };
+    if x > max { return max };
+    return x;
+}
+
+
+// fn first_image() {
+//     // Image
+//     const IMAGE_WIDTH: u32 = 256;
+//     const IMAGE_HEIGTH: u32 = 256;
+
+//     // Render
+//     print!("P3\n{} {}\n255\n", IMAGE_WIDTH, IMAGE_HEIGTH);
+
+//     for j in (0..256).rev() {
+//         eprintln!("Scanlines remaining: {}", j);
+//         for i in 0..256 {
+//             let r: f32 = i as f32/(IMAGE_WIDTH-1) as f32;
+//             let g: f32 = j as f32/(IMAGE_HEIGTH-1) as f32;
+//             let b: f32 = 0.25;
+
+//             let ir: u32 = (255.999 * r) as u32;
+//             let ig: u32 = (255.999 * g) as u32;
+//             let ib: u32 = (255.999 * b) as u32;
+
+//             println!("{} {} {}", ir, ig, ib)
+//         }
+//     }
+
+//     eprintln!("Done. ");
+// }
+
+// fn second_image() {
+//     // Image
+//     const IMAGE_WIDTH: u32 = 256;
+//     const IMAGE_HEIGTH: u32 = 256;
+
+//     // Render
+//     print!("P3\n{} {}\n255\n", IMAGE_WIDTH, IMAGE_HEIGTH);
+
+//     for j in (0..256).rev() {
+//         eprintln!("Scanlines remaining: {}", j);
+//         for i in 0..256 {
+//             let pixel_color: Color = Color(i as f64/(IMAGE_WIDTH-1) as f64, j as f64/(IMAGE_HEIGTH-1) as f64, 0.25 as f64);
+//             write_color(pixel_color);
+//         }
+//     }
+
+//     eprintln!("Done. ");
+// }
+
+// fn third_image() {
+//     // Image
+//     const ASPECT_RATIO: f64 = 16.0/9.0;
+//     const IMAGE_WIDTH: u64 = 400;
+//     const IMAGE_HEIGTH: u64 = (IMAGE_WIDTH as f64/ASPECT_RATIO) as u64;
+
+//     // Camera
+//     let viewport_height: f64= 2.0;
+//     let viewport_width: f64 = ASPECT_RATIO * viewport_height;
+//     let focal_length: f64 = 1.0;
+
+//     let origin = Point3(0.0, 0.0, 0.0);
+//     let horizontal: Vec3 = Vec3(viewport_width, 0.0, 0.0);
+//     let vertical: Vec3 = Vec3(0.0, viewport_height, 0.0);
+//     let lower_left_corner: Vec3 = origin - horizontal/2.0 - vertical/2.0 - Vec3(0.0, 0.0, focal_length);
+
+//     // Render
+//     print!("P3\n{} {}\n255\n", IMAGE_WIDTH, IMAGE_HEIGTH);
+
+//     for j in (0..IMAGE_HEIGTH).rev() {
+//         eprintln!("Scanlines remaining: {}", j);
+//         for i in 0..IMAGE_WIDTH {
+//             let u: f64 = i as f64 / (IMAGE_WIDTH - 1) as f64;
+//             let v: f64 = j as f64 / (IMAGE_HEIGTH - 1) as f64;
+//             let r: Ray = Ray {origin: origin, direction: lower_left_corner + u*horizontal + v*vertical - origin};
+//             let pixel_color: Color = ray_color(r);
+//             write_color(pixel_color);
+//         }
+//     }
+
+//     eprintln!("Done. ");
+// }
+
+// fn fourth_image() {
+//     // Image
+//     const ASPECT_RATIO: f64 = 16.0/9.0;
+//     const IMAGE_WIDTH: u64 = 400;
+//     const IMAGE_HEIGTH: u64 = (IMAGE_WIDTH as f64/ASPECT_RATIO) as u64;
+
+//     // World
+//     let mut world: HittableList = HittableList { objects: Vec::new() };
+//     world.add(Rc::new(Sphere { center: Point3(0.0, 0.0, -1.0), radius: 0.5 }));
+//     world.add(Rc::new(Sphere { center: Point3(0.0, -100.5, -1.0), radius: 100.0 }));
+
+//     // Camera
+//     let viewport_height: f64= 2.0;
+//     let viewport_width: f64 = ASPECT_RATIO * viewport_height;
+//     let focal_length: f64 = 1.0;
+
+//     let origin = Point3(0.0, 0.0, 0.0);
+//     let horizontal: Vec3 = Vec3(viewport_width, 0.0, 0.0);
+//     let vertical: Vec3 = Vec3(0.0, viewport_height, 0.0);
+//     let lower_left_corner: Vec3 = origin - horizontal/2.0 - vertical/2.0 - Vec3(0.0, 0.0, focal_length);
+
+//     // Render
+//     print!("P3\n{} {}\n255\n", IMAGE_WIDTH, IMAGE_HEIGTH);
+
+//     for j in (0..IMAGE_HEIGTH).rev() {
+//         eprintln!("Scanlines remaining: {}", j);
+//         for i in 0..IMAGE_WIDTH {
+//             let u: f64 = i as f64 / (IMAGE_WIDTH - 1) as f64;
+//             let v: f64 = j as f64 / (IMAGE_HEIGTH - 1) as f64;
+//             let r: Ray = Ray {origin: origin, direction: lower_left_corner + u*horizontal + v*vertical - origin};
+//             let pixel_color: Color = ray_color(r, &world);
+//             write_color(pixel_color);
+//         }
+//     }
+
+//     eprintln!("Done. ");
+// }
+
+fn working_image() {
     // Image
     const ASPECT_RATIO: f64 = 16.0/9.0;
-    const IMAGE_WIDTH: u64 = 400;
+    const IMAGE_WIDTH: u64 = 200;
     const IMAGE_HEIGTH: u64 = (IMAGE_WIDTH as f64/ASPECT_RATIO) as u64;
+    const SAMPLES_PER_PIXEL: u64 = 100;
+    const MAX_DEPTH: u64 = 50;
+
+    // World
+    let mut world: HittableList = HittableList { objects: Vec::new() };
+    world.add(Rc::new(Sphere { center: Point3(0.0, 0.0, -1.0), radius: 0.5 }));
+    world.add(Rc::new(Sphere { center: Point3(0.0, -100.5, -1.0), radius: 100.0 }));
 
     // Camera
-    let viewport_height: f64= 2.0;
-    let viewport_width: f64 = ASPECT_RATIO * viewport_height;
-    let focal_length: f64 = 1.0;
-
-    let origin = Point3(0.0, 0.0, 0.0);
-    let horizontal: Vec3 = Vec3(viewport_width, 0.0, 0.0);
-    let vertical: Vec3 = Vec3(0.0, viewport_height, 0.0);
-    let lower_left_corner: Vec3 = origin - horizontal/2.0 - vertical/2.0 - Vec3(0.0, 0.0, focal_length);
+    let cam: Camera = Default::default(); 
 
     // Render
     print!("P3\n{} {}\n255\n", IMAGE_WIDTH, IMAGE_HEIGTH);
@@ -351,11 +493,14 @@ fn third_image() {
     for j in (0..IMAGE_HEIGTH).rev() {
         eprintln!("Scanlines remaining: {}", j);
         for i in 0..IMAGE_WIDTH {
-            let u: f64 = i as f64 / (IMAGE_WIDTH - 1) as f64;
-            let v: f64 = j as f64 / (IMAGE_HEIGTH - 1) as f64;
-            let r: Ray = Ray {origin: origin, direction: lower_left_corner + u*horizontal + v*vertical - origin};
-            let pixel_color: Color = ray_color(r);
-            write_color(pixel_color);
+            let mut pixel_color: Color = Color(0.0, 0.0, 0.0);
+            for _k in 0..SAMPLES_PER_PIXEL {
+                let u: f64 = (i as f64 + random_double()) / (IMAGE_WIDTH - 1) as f64;
+                let v: f64 = (j as f64 + random_double()) / (IMAGE_HEIGTH - 1) as f64;
+                let r: Ray = cam.get_ray(u, v);
+                pixel_color += ray_color(&r, &world, MAX_DEPTH);
+            }
+            write_color(pixel_color, SAMPLES_PER_PIXEL);
         }
     }
 
@@ -375,22 +520,80 @@ fn hit_sphere(center: Point3, radius: f64, r: Ray) -> f64 {
     }
 }
 
-fn ray_color(r: Ray) -> Color {
-    let t: f64 = hit_sphere(Point3(0.0, 0.0, -1.0), 0.5, r);
-    if t > 0.0 {
-        let N: Vec3 = Vec3::unit_vector(r.at(t) - Vec3(0.0,0.0,-1.0));
-        return 0.5*Color(N.x()+1.0, N.y()+1.0, N.z()+1.0);
+
+// Initially the plan was to rely on methods in Vec3 but rand is slow. Sampling from a uniform is faster
+fn random_in_unit_sphere() -> Vec3 {
+    let random_space = Uniform::new(-1.0f64, 1.0f64);
+    let mut rng  = rand::thread_rng();
+    let mut p: Vec3 = Vec3(rng.sample(random_space), rng.sample(random_space), rng.sample(random_space));
+    loop {
+        if p.length_square() >= 1.0 {
+            p =  Vec3(rng.sample(random_space), rng.sample(random_space), rng.sample(random_space));
+            continue
+        }
+        return p;
+    }
+}
+
+// third_image ray_color
+// fn ray_color(r: Ray) -> Color {
+//     let t: f64 = hit_sphere(Point3(0.0, 0.0, -1.0), 0.5, r);
+//     if t > 0.0 {
+//         let N: Vec3 = Vec3::unit_vector(r.at(t) - Vec3(0.0,0.0,-1.0));
+//         return 0.5*Color(N.x()+1.0, N.y()+1.0, N.z()+1.0);
+//     }
+//     let unit_direction: Vec3 = Vec3::unit_vector(r.direction());
+//     let t = 0.5*(unit_direction.y() + 1.0);
+//     (1.0-t)*Color(1.0, 1.0, 1.0) + t*Color(0.5, 0.7, 1.0)
+// }
+
+fn ray_color(r: &Ray, world: &dyn Hittable, depth: u64) -> Color {
+    let mut rec: HitRecord = HitRecord {
+        p: Point3(0.0, 0.0, 0.0),
+        normal: Vec3(0.0, 0.0, 0.0),
+        t: 0.0,
+        front_face: false,
+    };
+
+    // Limits the callback length. Guards against stack overflow
+    if depth <= 0 {
+        return Color(0.0, 0.0, 0.0);
+    }
+
+    if world.hit(&r, 0.001, INFINITY, &mut rec) {
+        let target: Point3 = rec.p + rec.normal + random_in_unit_sphere();
+        return 0.5*ray_color(&Ray{origin:rec.p, direction:target - rec.p}, world, depth - 1);
     }
     let unit_direction: Vec3 = Vec3::unit_vector(r.direction());
     let t = 0.5*(unit_direction.y() + 1.0);
     (1.0-t)*Color(1.0, 1.0, 1.0) + t*Color(0.5, 0.7, 1.0)
 }
 
-fn write_color(pixel_color: Color) {
+// Write color before chapter 7
+
+// fn write_color(pixel_color: Color) {
+//     println!("{} {} {}", 
+//         (255.999 * pixel_color.x()) as u64, 
+//         (255.999 * pixel_color.y()) as u64,
+//         (255.999 * pixel_color.z()) as u64)
+// }
+
+fn write_color(pixel_color: Color, samples_per_pixel: u64) {
+    let mut r: f64 = pixel_color.x();
+    let mut g: f64 = pixel_color.y();
+    let mut b: f64 = pixel_color.z();
+
+    // Divide the color by the number of samples
+    let scale: f64 = 1.0/samples_per_pixel as f64;
+
+    r *= scale; r = r.sqrt();
+    g *= scale; g = g.sqrt();
+    b *= scale; b = b.sqrt();
+
     println!("{} {} {}", 
-        (255.999 * pixel_color.x()) as u64, 
-        (255.999 * pixel_color.y()) as u64,
-        (255.999 * pixel_color.z()) as u64)
+        (256.0 * clamp(r, 0.0, 0.999)) as u64, 
+        (256.0 * clamp(g, 0.0, 0.999)) as u64,
+        (256.0 * clamp(b, 0.0, 0.999)) as u64)
 }
 
 fn main() {
@@ -398,7 +601,7 @@ fn main() {
     // let b = Vec3(2.0, 3.0, 4.0);
     // let c : Vec3 = 2.0*a;
     // println!("This is my vector: {}", c);
-    third_image();
+    working_image();
 }
 
 
