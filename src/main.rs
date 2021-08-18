@@ -474,7 +474,7 @@ fn clamp(x: f64, min: f64, max: f64) -> f64 {
 fn working_image() {
     // Image
     const ASPECT_RATIO: f64 = 16.0/9.0;
-    const IMAGE_WIDTH: u64 = 200;
+    const IMAGE_WIDTH: u64 = 400;
     const IMAGE_HEIGTH: u64 = (IMAGE_WIDTH as f64/ASPECT_RATIO) as u64;
     const SAMPLES_PER_PIXEL: u64 = 100;
     const MAX_DEPTH: u64 = 50;
@@ -487,6 +487,10 @@ fn working_image() {
     // Camera
     let cam: Camera = Default::default(); 
 
+    // RNG
+    let random_space = Uniform::new(0.0f64, 1.0f64);
+    let mut rng  = rand::thread_rng();
+
     // Render
     print!("P3\n{} {}\n255\n", IMAGE_WIDTH, IMAGE_HEIGTH);
 
@@ -495,8 +499,8 @@ fn working_image() {
         for i in 0..IMAGE_WIDTH {
             let mut pixel_color: Color = Color(0.0, 0.0, 0.0);
             for _k in 0..SAMPLES_PER_PIXEL {
-                let u: f64 = (i as f64 + random_double()) / (IMAGE_WIDTH - 1) as f64;
-                let v: f64 = (j as f64 + random_double()) / (IMAGE_HEIGTH - 1) as f64;
+                let u: f64 = (i as f64 + rng.sample(random_space)) / (IMAGE_WIDTH - 1) as f64;
+                let v: f64 = (j as f64 + rng.sample(random_space)) / (IMAGE_HEIGTH - 1) as f64;
                 let r: Ray = cam.get_ray(u, v);
                 pixel_color += ray_color(&r, &world, MAX_DEPTH);
             }
@@ -535,6 +539,19 @@ fn random_in_unit_sphere() -> Vec3 {
     }
 }
 
+fn random_unit_vector() -> Vec3 {
+    Vec3::unit_vector(random_in_unit_sphere())
+}
+
+fn random_in_hemisphere(normal: Vec3) -> Vec3{
+    let in_unit_sphere = random_in_unit_sphere();
+    if Vec3::dot(in_unit_sphere, normal) > 0.0 {
+        return in_unit_sphere;
+    } else {
+        return -in_unit_sphere;
+    }
+}
+
 // third_image ray_color
 // fn ray_color(r: Ray) -> Color {
 //     let t: f64 = hit_sphere(Point3(0.0, 0.0, -1.0), 0.5, r);
@@ -561,7 +578,7 @@ fn ray_color(r: &Ray, world: &dyn Hittable, depth: u64) -> Color {
     }
 
     if world.hit(&r, 0.001, INFINITY, &mut rec) {
-        let target: Point3 = rec.p + rec.normal + random_in_unit_sphere();
+        let target: Point3 = rec.p + rec.normal + random_in_hemisphere(rec.normal);
         return 0.5*ray_color(&Ray{origin:rec.p, direction:target - rec.p}, world, depth - 1);
     }
     let unit_direction: Vec3 = Vec3::unit_vector(r.direction());
