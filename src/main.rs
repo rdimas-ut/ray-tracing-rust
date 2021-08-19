@@ -9,7 +9,9 @@ use std::ops::Sub;
 use std::ops::Mul;
 use std::ops::Div;
 use std::vec::Vec;
+
 use std::rc::Rc;
+use std::cell::RefCell;
 
 use rand::Rng;
 use rand::distributions::Uniform;
@@ -75,6 +77,12 @@ impl Vec3 {
 
     fn random_range(min: f64, max: f64) -> Vec3 {
         Vec3(random_double_range(min, max), random_double_range(min, max), random_double_range(min, max))
+    }
+
+    fn near_zero(&self) -> bool {
+        // Return true if the vector is close to zero in all dimensions.
+        const s: f64 = 1e-8;
+        (self.0.abs() < s) && (self.1.abs() < s) && (self.2.abs() < s)
     }
 }
 
@@ -206,10 +214,11 @@ impl Ray {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 struct HitRecord {
     p: Point3,
     normal: Vec3,
+    mat_ptr: Rc<RefCell<dyn Material>>,
     t: f64,
     front_face: bool,
 }
@@ -222,17 +231,18 @@ impl HitRecord {
 }
 
 trait Hittable {
-    fn hit(&self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool;
+    fn hit(&mut self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool;
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 struct Sphere {
     center: Point3,
-    radius: f64
+    radius: f64,
+    mat_ptr: Rc<RefCell<dyn Material>>,
 }
 
 impl Hittable for Sphere {
-    fn hit(&self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool {
+    fn hit(&mut self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool {
         let oc: Vec3 = r.origin() - self.center;
         let a: f64 = r.direction().length_square();
         let half_b: f64 = Vec3::dot(oc, r.direction());
@@ -256,13 +266,14 @@ impl Hittable for Sphere {
         rec.normal = (rec.p - self.center) / self.radius;
         let outward_normal: Vec3 = (rec.p - self.center) / self.radius;
         rec.set_face_normal(*r, outward_normal);
+        rec.mat_ptr = self.mat_ptr.clone();
 
         true
-    }   
+    }
 }
 
 struct HittableList{
-    objects: Vec<Rc<dyn Hittable>>,
+    objects: Vec<Rc<RefCell<dyn Hittable>>>,
 } 
 
 impl HittableList {
@@ -270,16 +281,17 @@ impl HittableList {
         self.objects.clear()
     }
 
-    fn add(&mut self, object: Rc<dyn Hittable>) {
+    fn add(&mut self, object: Rc<RefCell<dyn Hittable>>) {
         self.objects.push(object)
     }
 }
 
 impl Hittable for HittableList {
-    fn hit(&self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool {
+    fn hit(&mut self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool {
         let mut temp_rec: HitRecord = HitRecord {
             p: Point3(0.0, 0.0, 0.0),
             normal: Vec3(0.0, 0.0, 0.0),
+            mat_ptr: Rc::new(RefCell::new(DefaultMaterial)),
             t: 0.0,
             front_face: false,
         };
@@ -287,11 +299,14 @@ impl Hittable for HittableList {
         let mut closest_so_far: f64 = t_max;
 
         for object in self.objects.iter() {
-            if object.hit(r, t_min, closest_so_far, &mut temp_rec) {
+            if (*(*object)).borrow_mut().hit(r, t_min, closest_so_far, &mut temp_rec) {
                 hit_anything = true;
                 closest_so_far = temp_rec.t;
-                *rec = temp_rec;
             }
+        }
+
+        if hit_anything {
+            *rec = temp_rec;
         }
 
         return hit_anything;
@@ -354,6 +369,53 @@ fn clamp(x: f64, min: f64, max: f64) -> f64 {
     return x;
 }
 
+trait Material {
+    fn scatter(&self, r_in: &Ray, rec: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) -> bool;
+}
+
+struct Lambertian {
+    albedo: Color,
+}
+
+impl Material for Lambertian {
+    fn scatter(&self, r_in: &Ray, rec: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) -> bool {
+        let mut scatter_direction: Vec3 = rec.normal + random_unit_vector();
+
+        if scatter_direction.near_zero() {
+            scatter_direction = rec.normal;
+        }
+
+        *scattered = Ray { origin: rec.p, direction: scatter_direction};
+        *attenuation = self.albedo;
+        true
+    }
+}
+
+struct DefaultMaterial;
+
+impl Material for DefaultMaterial {
+    fn scatter(&self, r_in: &Ray, rec: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) -> bool{
+        true
+    }
+}
+
+fn reflect(v: Vec3, n: Vec3) -> Vec3 {
+    v - 2.0*Vec3::dot(v, n)*n
+}
+
+struct Metal {
+    albedo: Color,
+}
+
+impl Material for Metal {
+    fn scatter(&self, r_in: &Ray, rec: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) -> bool {
+        let reflected = reflect(Vec3::unit_vector(r_in.direction()), rec.normal);
+        *scattered = Ray {origin: rec.p, direction: reflected};
+        *attenuation = self.albedo;
+
+        Vec3::dot(scattered.direction(), rec.normal) > 0.0
+    }
+}
 
 // fn first_image() {
 //     // Image
@@ -481,8 +543,16 @@ fn working_image() {
 
     // World
     let mut world: HittableList = HittableList { objects: Vec::new() };
-    world.add(Rc::new(Sphere { center: Point3(0.0, 0.0, -1.0), radius: 0.5 }));
-    world.add(Rc::new(Sphere { center: Point3(0.0, -100.5, -1.0), radius: 100.0 }));
+
+    let material_ground = Rc::new(RefCell::new(Lambertian{ albedo: Color(0.8, 0.8, 0.0) }));
+    let material_center = Rc::new(RefCell::new(Lambertian{ albedo: Color(0.7, 0.3, 0.3) }));
+    let material_left   = Rc::new(RefCell::new(Metal {albedo: Color(0.8, 0.8, 0.8) }));
+    let material_right  = Rc::new(RefCell::new(Metal {albedo: Color(0.8, 0.6, 0.2) }));
+
+    world.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, -100.5, -1.0), radius: 100.0, mat_ptr: material_ground })));
+    world.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, 0.0, -1.0), radius: 0.5, mat_ptr: material_center })));
+    world.add(Rc::new(RefCell::new(Sphere { center: Point3(-1.0, 0.0, -1.0), radius: 0.5, mat_ptr: material_left })));
+    world.add(Rc::new(RefCell::new(Sphere { center: Point3(1.0, 0.0, -1.0), radius: 0.5, mat_ptr: material_right })));
 
     // Camera
     let cam: Camera = Default::default(); 
@@ -502,7 +572,7 @@ fn working_image() {
                 let u: f64 = (i as f64 + rng.sample(random_space)) / (IMAGE_WIDTH - 1) as f64;
                 let v: f64 = (j as f64 + rng.sample(random_space)) / (IMAGE_HEIGTH - 1) as f64;
                 let r: Ray = cam.get_ray(u, v);
-                pixel_color += ray_color(&r, &world, MAX_DEPTH);
+                pixel_color += ray_color(&r, &mut world, MAX_DEPTH);
             }
             write_color(pixel_color, SAMPLES_PER_PIXEL);
         }
@@ -564,10 +634,11 @@ fn random_in_hemisphere(normal: Vec3) -> Vec3{
 //     (1.0-t)*Color(1.0, 1.0, 1.0) + t*Color(0.5, 0.7, 1.0)
 // }
 
-fn ray_color(r: &Ray, world: &dyn Hittable, depth: u64) -> Color {
+fn ray_color(r: &Ray, world: &mut dyn Hittable, depth: u64) -> Color {
     let mut rec: HitRecord = HitRecord {
         p: Point3(0.0, 0.0, 0.0),
         normal: Vec3(0.0, 0.0, 0.0),
+        mat_ptr: Rc::new(RefCell::new(DefaultMaterial)),
         t: 0.0,
         front_face: false,
     };
@@ -578,8 +649,12 @@ fn ray_color(r: &Ray, world: &dyn Hittable, depth: u64) -> Color {
     }
 
     if world.hit(&r, 0.001, INFINITY, &mut rec) {
-        let target: Point3 = rec.p + rec.normal + random_in_hemisphere(rec.normal);
-        return 0.5*ray_color(&Ray{origin:rec.p, direction:target - rec.p}, world, depth - 1);
+        let mut scattered: Ray = Ray {origin: Point3(0.0, 0.0, 0.0), direction: Vec3(0.0, 0.0, 0.0)};
+        let mut attenuation: Color = Color(0.0, 0.0, 0.0);
+        if rec.mat_ptr.borrow().scatter(r, &rec, &mut attenuation, &mut scattered) {
+            return attenuation * ray_color(&scattered, world, depth-1);
+        }
+        return Color(0.0, 0.0, 0.0);
     }
     let unit_direction: Vec3 = Vec3::unit_vector(r.direction());
     let t = 0.5*(unit_direction.y() + 1.0);
