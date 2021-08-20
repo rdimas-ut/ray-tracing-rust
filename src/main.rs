@@ -117,6 +117,8 @@ fn write_color(pixel_color: Color, samples_per_pixel: u64) {
         (256.0 * clamp(b, 0.0, 0.999)) as u64)
 }
 
+
+
 fn main() {
         // Image
         const ASPECT_RATIO: f64 = 16.0/9.0;
@@ -142,7 +144,12 @@ fn main() {
         world.add(Rc::new(RefCell::new(Sphere { center: Point3(1.0, 0.0, -1.0), radius: 0.5, mat_ptr: material_right })));
     
         // Camera
-        let cam: Camera = Camera::new(Point3(-2.0,2.0,1.0), Point3(0.0,0.0,-1.0), Vec3(0.0,1.0,0.0), 90.0, ASPECT_RATIO); 
+        let lookfrom: Point3 = Point3(3.0, 3.0, 2.0);
+        let lookat: Point3 = Point3(0.0, 0.0, -1.0);
+        let vup: Vec3 = Vec3(0.0, 1.0, 0.0);
+        let dist_to_focus: f64 = (lookfrom-lookat).length();
+        let aperture: f64 = 2.0;
+        let cam: Camera = Camera::new(lookfrom, lookat, vup, 20.0, ASPECT_RATIO, aperture, dist_to_focus); 
     
         // RNG
         let random_space = Uniform::new(0.0f64, 1.0f64);
