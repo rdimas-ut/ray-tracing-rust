@@ -126,6 +126,7 @@ fn main() {
         const MAX_DEPTH: u64 = 50;
     
         // World
+        let R: f64 = (PI/4.0).cos();
         let mut world: HittableList = HittableList { objects: Vec::new() };
     
         let material_ground = Rc::new(RefCell::new(Lambertian{ albedo: Color(0.8, 0.8, 0.0) }));
@@ -141,7 +142,7 @@ fn main() {
         world.add(Rc::new(RefCell::new(Sphere { center: Point3(1.0, 0.0, -1.0), radius: 0.5, mat_ptr: material_right })));
     
         // Camera
-        let cam: Camera = Camera::new(90.0, ASPECT_RATIO); 
+        let cam: Camera = Camera::new(Point3(-2.0,2.0,1.0), Point3(0.0,0.0,-1.0), Vec3(0.0,1.0,0.0), 90.0, ASPECT_RATIO); 
     
         // RNG
         let random_space = Uniform::new(0.0f64, 1.0f64);
