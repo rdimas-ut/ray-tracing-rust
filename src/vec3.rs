@@ -8,9 +8,13 @@ use std::ops::Add;
 use std::ops::Sub;
 use std::ops::Mul;
 use std::ops::Div;
+
 use std::fmt;
+
 use rand::Rng;
 use rand::distributions::Uniform;
+pub const PI: f64 = 3.1415926535897932385;
+
 
 #[derive(Copy, Clone)]
 pub struct Vec3(pub f64, pub f64, pub f64);
@@ -210,4 +214,15 @@ pub fn random_in_hemisphere(normal: Vec3) -> Vec3{
     } else {
         return -in_unit_sphere;
     }
+}
+
+pub fn refract(uv: &Vec3, n: &Vec3, etai_over_etat: f64) -> Vec3 {
+    let cos_theta: f64 = Vec3::dot(-*uv, *n).min(1.0);
+    let r_out_perp: Vec3 =  etai_over_etat * (*uv + cos_theta * *n);
+    let r_out_parallel: Vec3 = -(1.0 - r_out_perp.length_square().abs()).sqrt() * *n;
+    r_out_perp + r_out_parallel
+}
+
+pub fn degrees_to_radians(degrees: f64) -> f64 {
+    (degrees*PI)/180.0
 }

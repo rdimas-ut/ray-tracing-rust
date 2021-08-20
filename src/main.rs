@@ -2,6 +2,7 @@ mod vec3;
 use vec3::Vec3;
 use vec3::Point3;
 use vec3::Color;
+use vec3::PI;
 
 mod camera;
 use camera::Camera;
@@ -17,6 +18,7 @@ mod material;
 use material::DefaultMaterial;
 use material::Lambertian;
 use material::Metal;
+use material::Dialectric;
 
 mod hittable_list;
 use hittable_list::HittableList;
@@ -37,13 +39,8 @@ use std::f64::MAX;
 
 // Constants
 const INFINITY: f64 = MAX;
-const PI: f64 = 3.1415926535897932385;
 
 // Utility Functions
-fn degrees_to_radians(degrees: f64) -> f64 {
-    (degrees*PI)/180.0
-}
-
 fn random_double() -> f64 {
     let a: f64 = rand::thread_rng().gen_range(0.0..1.0);
     a
@@ -132,17 +129,19 @@ fn main() {
         let mut world: HittableList = HittableList { objects: Vec::new() };
     
         let material_ground = Rc::new(RefCell::new(Lambertian{ albedo: Color(0.8, 0.8, 0.0) }));
-        let material_center = Rc::new(RefCell::new(Lambertian{ albedo: Color(0.7, 0.3, 0.3) }));
-        let material_left   = Rc::new(RefCell::new(Metal {albedo: Color(0.8, 0.8, 0.8) }));
-        let material_right  = Rc::new(RefCell::new(Metal {albedo: Color(0.8, 0.6, 0.2) }));
+        let material_center = Rc::new(RefCell::new(Lambertian{ albedo: Color(0.1, 0.2, 0.5) }));
+        let material_left   = Rc::new(RefCell::new(Dialectric {ir: 1.5 }));
+        let material_left2   = Rc::new(RefCell::new(Dialectric {ir: 1.5 }));
+        let material_right  = Rc::new(RefCell::new(Metal {albedo: Color(0.8, 0.6, 0.2), fuzz: 0.0 }));
     
         world.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, -100.5, -1.0), radius: 100.0, mat_ptr: material_ground })));
         world.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, 0.0, -1.0), radius: 0.5, mat_ptr: material_center })));
         world.add(Rc::new(RefCell::new(Sphere { center: Point3(-1.0, 0.0, -1.0), radius: 0.5, mat_ptr: material_left })));
+        world.add(Rc::new(RefCell::new(Sphere { center: Point3(-1.0, 0.0, -1.0), radius: -0.4, mat_ptr: material_left2 })));
         world.add(Rc::new(RefCell::new(Sphere { center: Point3(1.0, 0.0, -1.0), radius: 0.5, mat_ptr: material_right })));
     
         // Camera
-        let cam: Camera = Default::default(); 
+        let cam: Camera = Camera::new(90.0, ASPECT_RATIO); 
     
         // RNG
         let random_space = Uniform::new(0.0f64, 1.0f64);
