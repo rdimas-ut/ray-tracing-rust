@@ -216,6 +216,19 @@ pub fn random_in_hemisphere(normal: Vec3) -> Vec3{
     }
 }
 
+pub fn random_in_unit_disk() -> Vec3 {
+    let random_space = Uniform::new(-1.0f64, 1.0f64);
+    let mut rng  = rand::thread_rng();
+    let mut p: Vec3 = Vec3(rng.sample(random_space), rng.sample(random_space), 0.0);
+    loop {
+        if p.length_square() >= 1.0 {
+            p =  Vec3(rng.sample(random_space), rng.sample(random_space), 0.0);
+            continue
+        }
+        return p;
+    }
+}
+
 pub fn refract(uv: &Vec3, n: &Vec3, etai_over_etat: f64) -> Vec3 {
     let cos_theta: f64 = Vec3::dot(-*uv, *n).min(1.0);
     let r_out_perp: Vec3 =  etai_over_etat * (*uv + cos_theta * *n);
