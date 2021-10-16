@@ -4,7 +4,8 @@ use crate::vec3::Point3;
 #[derive(Copy, Clone)]
 pub struct Ray {
     pub origin: Point3,
-    pub direction: Vec3 
+    pub direction: Vec3,
+    pub tm: f64, 
 }
 
 impl Ray {
@@ -18,5 +19,9 @@ impl Ray {
 
     pub fn direction(self) -> Vec3 {
         self.direction
+    }
+
+    pub fn time(self) -> f64 {
+        self.tm
     }
 }
