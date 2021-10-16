@@ -26,6 +26,9 @@ use hittable_list::HittableList;
 mod sphere;
 use sphere::Sphere;
 
+mod moving_sphere;
+use moving_sphere::MovingSphere;
+
 mod rtweekend;
 use rtweekend::random_double;
 
@@ -77,7 +80,7 @@ fn ray_color(r: &Ray, world: &mut dyn Hittable, depth: u64) -> Color {
     }
 
     if world.hit(&r, 0.001, INFINITY, &mut rec) {
-        let mut scattered: Ray = Ray {origin: Point3(0.0, 0.0, 0.0), direction: Vec3(0.0, 0.0, 0.0)};
+        let mut scattered: Ray = Ray {origin: Point3(0.0, 0.0, 0.0), direction: Vec3(0.0, 0.0, 0.0), tm: 0.0};
         let mut attenuation: Color = Color(0.0, 0.0, 0.0);
         if rec.mat_ptr.borrow().scatter(r, &rec, &mut attenuation, &mut scattered) {
             return attenuation * ray_color(&scattered, world, depth-1);
@@ -127,7 +130,8 @@ fn random_scene(zero_to_one: rand::distributions::Uniform<f64>) -> HittableList 
                     // diffuse
                     let albedo: Color = Color::random() * Color::random();
                     let sphere_material = Rc::new(RefCell::new(Lambertian{ albedo: albedo }));
-                    world.add(Rc::new(RefCell::new(Sphere { center: center, radius: 0.2, mat_ptr: sphere_material })));
+                    let center2 = center + Vec3(0.0, random_double(zero_to_five_tenths_dist), 0.0);
+                    world.add(Rc::new(RefCell::new(MovingSphere { center0: center, center1: center2, time0: 0.0, time1: 1.0, radius: 0.2, mat_ptr: sphere_material })));
                 } else if choose_mat < 0.95 {
                     // metal
                     let albedo = Color::random_range(0.5, 1.0);
@@ -162,10 +166,10 @@ fn main() {
         let mut rng  = rand::thread_rng();
 
         // Image
-        const ASPECT_RATIO: f64 = 3.0/2.0;
-        const IMAGE_WIDTH: u64 = 1200;
+        const ASPECT_RATIO: f64 = 16.0/9.0;
+        const IMAGE_WIDTH: u64 = 400;
         const IMAGE_HEIGTH: u64 = (IMAGE_WIDTH as f64/ASPECT_RATIO) as u64;
-        const SAMPLES_PER_PIXEL: u64 = 500;
+        const SAMPLES_PER_PIXEL: u64 = 100;
         const MAX_DEPTH: u64 = 50;
     
         // World
@@ -178,7 +182,7 @@ fn main() {
         let dist_to_focus: f64 = 10.0;
         let aperture: f64 = 0.1;
 
-        let cam: Camera = Camera::new(lookfrom, lookat, vup, 20.0, ASPECT_RATIO, aperture, dist_to_focus); 
+        let cam: Camera = Camera::new(lookfrom, lookat, vup, 20.0, ASPECT_RATIO, aperture, dist_to_focus, 0.0, 1.0); 
     
         // Render
         print!("P3\n{} {}\n255\n", IMAGE_WIDTH, IMAGE_HEIGTH);
