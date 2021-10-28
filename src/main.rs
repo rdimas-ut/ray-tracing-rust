@@ -32,6 +32,8 @@ use moving_sphere::MovingSphere;
 mod rtweekend;
 use rtweekend::random_double;
 
+mod aabb;
+
 use std::vec::Vec;
 
 use std::rc::Rc;
