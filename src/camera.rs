@@ -27,7 +27,6 @@ impl Camera {
         let rd: Vec3 = self.lens_radius * random_in_unit_disk();
         let offset: Vec3 = self.u*rd.x() + self.v*rd.y();
         let random_dist = Uniform::new(self.time0, self.time1);
-        let choose_mat: f64 = random_double(random_dist);
 
         Ray {
             origin: self.origin + offset,

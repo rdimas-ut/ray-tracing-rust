@@ -9,6 +9,8 @@ use crate::hittable::HitRecord;
 use crate::ray::Ray;
 
 use crate::material::DefaultMaterial;
+use crate::aabb::AABB;
+use crate::aabb::surrounding_box;
 
 pub struct HittableList{
     pub objects: Vec<Rc<RefCell<dyn Hittable>>>,
@@ -48,5 +50,26 @@ impl Hittable for HittableList {
         }
 
         return hit_anything;
+    }
+
+    fn bounding_box(&self, time0: f64, time1: f64, output_box: &mut AABB) -> bool {
+        if self.objects.len() == 0 {
+            return false;
+        }
+
+        let mut temp_box: AABB = AABB {
+            minimum: Vec3(0.0, 0.0, 0.0),
+            maximum: Vec3(0.0, 0.0, 0.0)
+        };
+
+        let mut first_box: bool = true;
+
+        for object in self.objects.iter() {
+            if !object.borrow().bounding_box(time0, time1, &mut temp_box) {return false;}
+            *output_box = if first_box { temp_box } else { surrounding_box(output_box, &temp_box) };
+            first_box = false;
+        }
+
+        true
     }
 }

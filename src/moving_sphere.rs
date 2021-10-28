@@ -10,6 +10,9 @@ use crate::ray::Ray;
 
 use crate::material::Material;
 
+use crate::aabb::AABB;
+use crate::aabb::surrounding_box;
+
 #[derive(Clone)]
 pub struct MovingSphere {
     pub center0: Point3,
@@ -52,6 +55,21 @@ impl Hittable for MovingSphere {
         rec.set_face_normal(*r, outward_normal);
         rec.mat_ptr = self.mat_ptr.clone();
 
+        true
+    }
+
+    fn bounding_box(&self, time0: f64, time1: f64, output_box: &mut AABB) -> bool {
+        let box0: AABB = AABB {
+            minimum: self.center(time0) - Vec3(self.radius, self.radius, self.radius),
+            maximum: self.center(time0) + Vec3(self.radius, self.radius, self.radius)
+        };
+
+        let box1: AABB = AABB {
+            minimum: self.center(time1) - Vec3(self.radius, self.radius, self.radius),
+            maximum: self.center(time1) + Vec3(self.radius, self.radius, self.radius)
+        };
+
+        *output_box = surrounding_box(&box0, &box1);
         true
     }
 }

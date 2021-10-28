@@ -10,6 +10,8 @@ use crate::ray::Ray;
 
 use crate::material::Material;
 
+use crate::aabb::AABB;
+
 
 #[derive(Clone)]
 pub struct Sphere {
@@ -45,6 +47,14 @@ impl Hittable for Sphere {
         rec.set_face_normal(*r, outward_normal);
         rec.mat_ptr = self.mat_ptr.clone();
 
+        true
+    }
+
+    fn bounding_box(&self, time0: f64, time1: f64, output_box: &mut AABB) -> bool {
+        *output_box = AABB{
+            minimum: self.center - Vec3(self.radius, self.radius, self.radius), 
+            maximum: self.center + Vec3(self.radius, self.radius, self.radius),
+        };
         true
     }
 }
