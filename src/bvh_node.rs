@@ -86,21 +86,25 @@ impl BvhNode {
     }
 }
 
-fn box_compare(a: Rc<RefCell<dyn Hittable>>, b: Rc<RefCell<dyn Hittable>>) -> bool {
+fn box_compare(a: Rc<RefCell<dyn Hittable>>, b: Rc<RefCell<dyn Hittable>>, axis: u16) -> bool {
     let box_a: AABB;
     let box_b: AABB;
     
-    if !a.borrow().bounding_box(0.0, box_a)
+    if !a.borrow().bounding_box(0.0, box_a) || !b.borrow().bounding_box(0.0, box_b) {
+        println!("No bounding box in bvh_node consctructor.");
+    }
+
+    box_a.min()[axis] < box_b.min()[axis]
 }
 
-fn box_x_compare() -> bool {
-    true
+fn box_x_compare(a: Rc<RefCell<dyn Hittable>>, b: Rc<RefCell<dyn Hittable>>) -> bool {
+    box_compare(a, b, 0)
 }
 
 fn box_y_compare() -> bool {
-    true
+    box_compare(a, b, 1)
 }
 
 fn box_z_compare() -> bool {
-    true
+    box_compare(a, b, 2)
 }
