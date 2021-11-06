@@ -40,6 +40,9 @@ impl Hittable for BvhNode {
 
 impl BvhNode {
     fn new(src_objects: Vec<Rc<RefCell<dyn Hittable>>>, start: u16, end:u16 time0: f64, time1: f64) -> Self {
+        let left: Rc<RefCell<dyn Hittable>>;
+        let right: Rc<RefCell<dyn Hittable>>;
+        
         let objects = src_objects.clone();
 
         let axis: i64 = rand::thread_rng().gen_range(0..2);
@@ -68,12 +71,26 @@ impl BvhNode {
             right = Rc::new(RefCell::new(BvhNode.new(objects, mid, end, time0, time1)));
         }
 
-        // I'm comfused here on what exactly is being done
+        let box_left: AABB;
+        let box_right: AABB;
+
+        if !left.bounding_box(time0, time1, box_left) || !right.bounding_box(time0, time1, box_right) {
+            println!("No bounding box in bvh_node constructor.");
+        }
+
+        BvhNode {
+            left: left,
+            right: right,
+            box: surrounding_box(box_left, box_right),
+        }
     }
 }
 
-fn box_compare() -> bool {
-    true
+fn box_compare(a: Rc<RefCell<dyn Hittable>>, b: Rc<RefCell<dyn Hittable>>) -> bool {
+    let box_a: AABB;
+    let box_b: AABB;
+    
+    if !a.borrow().bounding_box(0.0, box_a)
 }
 
 fn box_x_compare() -> bool {
