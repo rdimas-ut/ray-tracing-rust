@@ -34,6 +34,9 @@ use rtweekend::random_double;
 
 mod aabb;
 
+mod texture;
+use texture::CheckerTexture;
+
 use std::vec::Vec;
 
 use std::rc::Rc;
@@ -73,6 +76,8 @@ fn ray_color(r: &Ray, world: &mut dyn Hittable, depth: u64) -> Color {
         normal: Vec3(0.0, 0.0, 0.0),
         mat_ptr: Rc::new(RefCell::new(DefaultMaterial)),
         t: 0.0,
+        u: 0.0,
+        v: 0.0,
         front_face: false,
     };
 
@@ -117,8 +122,8 @@ fn random_scene(zero_to_one: rand::distributions::Uniform<f64>) -> HittableList 
     let zero_to_five_tenths_dist = Uniform::new(0.0f64, 0.5f64);
     let five_tenths_to_one_dist = Uniform::new(0.5f64, 1.0f64);
 
-    let ground_material = Rc::new(RefCell::new(Lambertian{ albedo: Color(0.5, 0.5, 0.5) }));
-    world.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, -1000.0, 0.0), radius: 1000.0, mat_ptr: ground_material })));
+    let checker = Rc::new(RefCell::new(CheckerTexture::new(Color(0.2, 0.3, 0.1),Color(0.9, 0.9, 0.9))));
+    world.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, -1000.0, 0.0), radius: 1000.0, mat_ptr: Rc::new(RefCell::new(Lambertian{ albedo: checker })) })));
 
     for a in -11..11 {
         for b in -11..11 {
@@ -126,12 +131,12 @@ fn random_scene(zero_to_one: rand::distributions::Uniform<f64>) -> HittableList 
             let center: Point3 = Point3(a as f64 + 0.9*random_double(zero_to_one), 0.2, b as f64 + 0.9*random_double(zero_to_one));
 
             if (center - Point3(4.0, 0.2, 0.0)).length() > 0.9 {
-                let _sphere_material = Rc::new(RefCell::new(Lambertian{ albedo: Color(0.8, 0.8, 0.0) }));
+                let sphere_material: Rc<RefCell<Lambertian>>;
 
                 if choose_mat < 0.8 {
                     // diffuse
                     let albedo: Color = Color::random() * Color::random();
-                    let sphere_material = Rc::new(RefCell::new(Lambertian{ albedo: albedo }));
+                    let sphere_material = Rc::new(RefCell::new(Lambertian::new(&albedo)));
                     let center2 = center + Vec3(0.0, random_double(zero_to_five_tenths_dist), 0.0);
                     world.add(Rc::new(RefCell::new(MovingSphere { center0: center, center1: center2, time0: 0.0, time1: 1.0, radius: 0.2, mat_ptr: sphere_material })));
                 } else if choose_mat < 0.95 {
@@ -153,7 +158,7 @@ fn random_scene(zero_to_one: rand::distributions::Uniform<f64>) -> HittableList 
     let material1 = Rc::new(RefCell::new(Dialectric{ ir: 1.5 }));
     world.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, 1.0, 0.0), radius: 1.0, mat_ptr: material1 })));
 
-    let material2 = Rc::new(RefCell::new(Lambertian{ albedo: Color(0.4, 0.2, 0.1) }));
+    let material2 = Rc::new(RefCell::new(Lambertian::new(&Color(0.4, 0.2, 0.1))));
     world.add(Rc::new(RefCell::new(Sphere { center: Point3(-4.0, 1.0, 0.0), radius: 1.0, mat_ptr: material2 })));
 
     let material3 = Rc::new(RefCell::new(Metal{ albedo: Color(0.7, 0.6, 0.5), fuzz: 0.0 }));

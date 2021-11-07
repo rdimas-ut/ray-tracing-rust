@@ -7,12 +7,18 @@ use crate::vec3::refract;
 use crate::ray::Ray;
 use crate::hittable::HitRecord;
 
+use crate::texture::Texture;
+use crate::texture::SolidColor;
+
+use std::rc::Rc;
+use std::cell::RefCell;
+
 pub trait Material {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) -> bool;
 }
 
 pub struct Lambertian {
-    pub albedo: Color,
+    pub albedo: Rc<RefCell<dyn Texture>>,
 }
 
 impl Material for Lambertian {
@@ -24,8 +30,14 @@ impl Material for Lambertian {
         }
 
         *scattered = Ray { origin: rec.p, direction: scatter_direction, tm: _r_in.time()};
-        *attenuation = self.albedo;
+        *attenuation = self.albedo.borrow().value(rec.u, rec.v, &rec.p);
         true
+    }
+}
+
+impl Lambertian {
+    pub fn new(a: &Color) -> Self {
+        Lambertian {albedo: Rc::new(RefCell::new(SolidColor::new(a.0, a.1, a.2)))}
     }
 }
 
