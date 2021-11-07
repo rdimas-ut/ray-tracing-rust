@@ -3,6 +3,7 @@ use std::cell::RefCell;
 
 use crate::vec3::Vec3;
 use crate::vec3::Point3;
+use crate::vec3::PI;
 
 use crate::hittable::Hittable;
 use crate::hittable::HitRecord;
@@ -45,6 +46,7 @@ impl Hittable for Sphere {
         rec.normal = (rec.p - self.center) / self.radius;
         let outward_normal: Vec3 = (rec.p - self.center) / self.radius;
         rec.set_face_normal(*r, outward_normal);
+        self.get_sphere(&outward_normal, &mut rec.u, &mut rec.v);
         rec.mat_ptr = self.mat_ptr.clone();
 
         true
@@ -56,5 +58,14 @@ impl Hittable for Sphere {
             maximum: self.center + Vec3(self.radius, self.radius, self.radius),
         };
         true
+    }
+}
+
+impl Sphere {
+    fn get_sphere(&self, p: &Point3, u: &mut f64, v: &mut f64) -> () {
+        let theta = (-p.y()).acos();
+        let phi = (-p.z()).atan2(p.x()) + PI;
+        *u = phi / (2.0*PI);
+        *v = theta / PI;
     }
 }

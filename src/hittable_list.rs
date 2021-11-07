@@ -33,6 +33,8 @@ impl Hittable for HittableList {
             normal: Vec3(0.0, 0.0, 0.0),
             mat_ptr: Rc::new(RefCell::new(DefaultMaterial)),
             t: 0.0,
+            u: 0.0,
+            v: 0.0,
             front_face: false,
         };
         let mut hit_anything: bool = false;
