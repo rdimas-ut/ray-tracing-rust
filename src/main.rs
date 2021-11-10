@@ -167,6 +167,18 @@ fn random_scene(zero_to_one: rand::distributions::Uniform<f64>) -> HittableList 
     return world;
 }
 
+fn two_spheres() -> HittableList {
+    let mut objects: HittableList = HittableList {objects: Vec::new() };
+
+    let checker1 = Rc::new(RefCell::new(CheckerTexture::new(Color(0.2, 0.3, 0.1),Color(0.9, 0.9, 0.9))));
+    let checker2 = Rc::new(RefCell::new(CheckerTexture::new(Color(0.2, 0.3, 0.1),Color(0.9, 0.9, 0.9))));
+
+    objects.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, -10.0, 0.0), radius: 10.0, mat_ptr: Rc::new(RefCell::new(Lambertian{ albedo: checker1 })) })));
+    objects.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, 10.0, 0.0), radius: 10.0, mat_ptr: Rc::new(RefCell::new(Lambertian{ albedo: checker2 })) })));
+
+    return objects;
+}
+
 fn main() {
         // RNG
         let zero_to_one = Uniform::new(0.0f64, 1.0f64);
@@ -180,17 +192,50 @@ fn main() {
         const MAX_DEPTH: u64 = 50;
     
         // World
-        let mut world = random_scene(zero_to_one);
+        // let mut world = random_scene(zero_to_one);
+        let mut world: HittableList;
+
+        let lookfrom: Point3;
+        let lookat: Point3;
+        let mut vfov: f64 = 40.0;
+        let mut aperture: f64 = 0.0;
+
+        let case: u32 = 0;
+
+        match case {
+            1 => {
+                world = random_scene(zero_to_one);
+                lookfrom = Point3(13.0, 2.0, 3.0);
+                lookat = Point3(0.0, 0.0, 0.0);
+                vfov = 20.0;
+                aperture = 0.1;
+            },
+            2 => {
+                world = two_spheres();
+                lookfrom = Point3(13.0, 2.0, 3.0);
+                lookat = Point3(0.0, 0.0, 0.0);
+                vfov = 20.0;
+            },
+            _ => {
+                world = two_spheres();
+                lookfrom = Point3(13.0, 2.0, 3.0);
+                lookat = Point3(0.0, 0.0, 0.0);
+                vfov = 20.0;
+            }
+        }
 
         // Camera
-        let lookfrom: Point3 = Point3(13.0, 2.0, 3.0);
-        let lookat: Point3 = Point3(0.0, 0.0, 0.0);
-        let vup: Vec3 = Vec3(0.0, 1.0, 0.0);
+        // let lookfrom: Point3 = Point3(13.0, 2.0, 3.0);
+        // let lookat: Point3 = Point3(0.0, 0.0, 0.0);
+        // let vup: Vec3 = Vec3(0.0, 1.0, 0.0);
+        // let dist_to_focus: f64 = 10.0;
+        // let aperture: f64 = 0.1;
+        let vup = Vec3(0.0, 1.0, 0.0);
         let dist_to_focus: f64 = 10.0;
-        let aperture: f64 = 0.1;
 
-        let cam: Camera = Camera::new(lookfrom, lookat, vup, 20.0, ASPECT_RATIO, aperture, dist_to_focus, 0.0, 1.0); 
-    
+        // let cam: Camera = Camera::new(lookfrom, lookat, vup, 20.0, ASPECT_RATIO, aperture, dist_to_focus, 0.0, 1.0); 
+        let cam: Camera = Camera::new(lookfrom, lookat, vup, vfov, ASPECT_RATIO, aperture, dist_to_focus, 0.0, 1.0); 
+
         // Render
         print!("P3\n{} {}\n255\n", IMAGE_WIDTH, IMAGE_HEIGTH);
     
