@@ -1,6 +1,8 @@
 use crate::vec3::Color;
 use crate::vec3::Point3;
 
+use crate::perlin::Perlin;
+
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -48,5 +50,15 @@ impl CheckerTexture {
             even: Rc::new(RefCell::new(SolidColor{color_value: c1})),
             odd: Rc::new(RefCell::new(SolidColor{color_value: c2}))
         }
+    }
+}
+
+pub struct NoiseTexture {
+    pub noise: Perlin,
+}
+
+impl Texture for NoiseTexture {
+    fn value(&self, u: f64, v: f64, p: &Point3) -> Color {
+        Color(1.0, 1.0, 1.0) * self.noise.noise(p)
     }
 }
