@@ -185,8 +185,8 @@ fn two_spheres() -> HittableList {
 fn two_perlin_spheres() -> HittableList {
     let mut objects: HittableList = HittableList {objects: Vec::new() };
 
-    let pertext1 = Rc::new(RefCell::new(texture::NoiseTexture { noise: Perlin::new()}));
-    let pertext2 = Rc::new(RefCell::new(texture::NoiseTexture { noise: Perlin::new()}));
+    let pertext1 = Rc::new(RefCell::new(texture::NoiseTexture { noise: Perlin::new(), scale: 4.0}));
+    let pertext2 = Rc::new(RefCell::new(texture::NoiseTexture { noise: Perlin::new(), scale: 4.0}));
     objects.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, -1000.0, 0.0), radius: 1000.0, mat_ptr: Rc::new(RefCell::new(Lambertian{ albedo: pertext1 })) })));
     objects.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, 2.0, 0.0), radius: 2.0, mat_ptr: Rc::new(RefCell::new(Lambertian{ albedo: pertext2 })) })));
 
