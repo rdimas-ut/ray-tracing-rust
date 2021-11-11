@@ -49,8 +49,6 @@ impl Material for DefaultMaterial {
     }
 }
 
-
-
 pub struct Metal {
     pub albedo: Color,
     pub fuzz: f64,

@@ -37,6 +37,9 @@ mod aabb;
 mod texture;
 use texture::CheckerTexture;
 
+mod perlin;
+use perlin::Perlin;
+
 use std::vec::Vec;
 
 use std::rc::Rc;
@@ -179,6 +182,17 @@ fn two_spheres() -> HittableList {
     return objects;
 }
 
+fn two_perlin_spheres() -> HittableList {
+    let mut objects: HittableList = HittableList {objects: Vec::new() };
+
+    let pertext1 = Rc::new(RefCell::new(texture::NoiseTexture { noise: Perlin::new()}));
+    let pertext2 = Rc::new(RefCell::new(texture::NoiseTexture { noise: Perlin::new()}));
+    objects.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, -1000.0, 0.0), radius: 1000.0, mat_ptr: Rc::new(RefCell::new(Lambertian{ albedo: pertext1 })) })));
+    objects.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, 2.0, 0.0), radius: 2.0, mat_ptr: Rc::new(RefCell::new(Lambertian{ albedo: pertext2 })) })));
+
+    return objects;
+}
+
 fn main() {
         // RNG
         let zero_to_one = Uniform::new(0.0f64, 1.0f64);
@@ -216,11 +230,17 @@ fn main() {
                 lookat = Point3(0.0, 0.0, 0.0);
                 vfov = 20.0;
             },
-            _ => {
-                world = two_spheres();
+            3 => {
+                world = two_perlin_spheres();
                 lookfrom = Point3(13.0, 2.0, 3.0);
                 lookat = Point3(0.0, 0.0, 0.0);
-                vfov = 20.0;
+                vfov= 20.0;
+            },
+            _ => {
+                world = two_perlin_spheres();
+                lookfrom = Point3(13.0, 2.0, 3.0);
+                lookat = Point3(0.0, 0.0, 0.0);
+                vfov= 20.0;
             }
         }
 
