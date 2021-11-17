@@ -76,18 +76,28 @@ pub struct ImageTexture {
 
 impl Texture for ImageTexture {
     fn value(&self, u: f64, v: f64, p: &Point3) -> Color {
-        
+        let u = if u < 0.0 { 0.0 } else if u > 1.0 { 1.0 } else { u };
+        let v = 1.0 - {if v < 0.0 { 0.0 } else if v > 1.0 { 1.0 } else { v }};
 
-        Color(0.0, 0.0, 0.0)
+        let mut i = (u * self.width as f64) as u32;
+        let mut j = (v * self.height as f64) as u32;
+
+        if i >= self.width { i = self.width - 1 }
+        if j >= self.height { j = self.height - 1 }
+
+        let color_scale = 1.0 / 255.0;
+        let pixel = *self.data.get_pixel(i, j);
+
+        Color(color_scale * pixel[0] as f64, color_scale * pixel[1] as f64, color_scale * pixel[2] as f64)
     }
 }
 
 impl ImageTexture {
-    fn new(filename: String) -> Self {
+    pub fn new(filename: String) -> Self {
         let bytes_per_pixel: u32 = 3;
-        let limage = Reader::open(filename).unwrap().decode().unwrap().as_rgb8().clone();
+        let limage = Reader::open(filename).unwrap().decode().unwrap().to_rgb8();
 
-        let (width, height) = limage.unwrap().dimensions();
+        let (width, height) = limage.dimensions();
 
         // if (!data) {
         //     std::cerr << "ERROR: Could not load texture image file '" << filename << "'.\n";

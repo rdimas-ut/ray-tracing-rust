@@ -193,6 +193,16 @@ fn two_perlin_spheres() -> HittableList {
     return objects;
 }
 
+fn earth() -> HittableList {
+    let earth_texture = Rc::new(RefCell::new(texture::ImageTexture::new(String::from("earthmap.jpg"))));
+    let earth_surface = Rc::new(RefCell::new(Lambertian{ albedo: earth_texture }));
+    let globe = Rc::new(RefCell::new(Sphere { center: Point3(0.0, 0.0, 0.0), radius: 2.0, mat_ptr: earth_surface}));
+
+    let mut objects = HittableList {objects: Vec::new() };
+    objects.add(globe);
+    return objects;
+}
+
 fn main() {
         // RNG
         let zero_to_one = Uniform::new(0.0f64, 1.0f64);
@@ -236,11 +246,17 @@ fn main() {
                 lookat = Point3(0.0, 0.0, 0.0);
                 vfov= 20.0;
             },
-            _ => {
-                world = two_perlin_spheres();
+            4 => {
+                world = earth();
                 lookfrom = Point3(13.0, 2.0, 3.0);
                 lookat = Point3(0.0, 0.0, 0.0);
-                vfov= 20.0;
+                vfov = 20.0;
+            },
+            _ => {
+                world = earth();
+                lookfrom = Point3(13.0, 2.0, 3.0);
+                lookat = Point3(0.0, 0.0, 0.0);
+                vfov = 20.0;
             }
         }
 
