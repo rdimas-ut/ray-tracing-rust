@@ -179,12 +179,12 @@ impl Div<f64> for Vec3 {
     }
 }
 
-fn random_double() -> f64 {
+pub fn random_double() -> f64 {
     let a: f64 = rand::thread_rng().gen_range(0.0..1.0);
     a
 }
 
-fn random_double_range(min: f64, max: f64) -> f64 {
+pub fn random_double_range(min: f64, max: f64) -> f64 {
     let a: f64 = rand::thread_rng().gen_range(0.0..1.0);
     min + (max - min)*a
 }
