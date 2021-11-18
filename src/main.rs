@@ -40,6 +40,10 @@ use texture::CheckerTexture;
 mod perlin;
 use perlin::Perlin;
 
+mod aarect;
+
+mod abox;
+
 use std::vec::Vec;
 
 use std::rc::Rc;
@@ -73,7 +77,7 @@ fn hit_sphere(center: Point3, radius: f64, r: Ray) -> f64 {
     }
 }
 
-fn ray_color(r: &Ray, world: &mut dyn Hittable, depth: u64) -> Color {
+fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64) -> Color {
     let mut rec: HitRecord = HitRecord {
         p: Point3(0.0, 0.0, 0.0),
         normal: Vec3(0.0, 0.0, 0.0),
@@ -89,17 +93,19 @@ fn ray_color(r: &Ray, world: &mut dyn Hittable, depth: u64) -> Color {
         return Color(0.0, 0.0, 0.0);
     }
 
-    if world.hit(&r, 0.001, INFINITY, &mut rec) {
-        let mut scattered: Ray = Ray {origin: Point3(0.0, 0.0, 0.0), direction: Vec3(0.0, 0.0, 0.0), tm: 0.0};
-        let mut attenuation: Color = Color(0.0, 0.0, 0.0);
-        if rec.mat_ptr.borrow().scatter(r, &rec, &mut attenuation, &mut scattered) {
-            return attenuation * ray_color(&scattered, world, depth-1);
-        }
-        return Color(0.0, 0.0, 0.0);
+    if !world.hit(&r, 0.001, INFINITY, &mut rec) {
+        return *background;
     }
-    let unit_direction: Vec3 = Vec3::unit_vector(r.direction());
-    let t = 0.5*(unit_direction.y() + 1.0);
-    (1.0-t)*Color(1.0, 1.0, 1.0) + t*Color(0.5, 0.7, 1.0)
+
+    let mut scattered: Ray = Ray {origin: Point3(0.0, 0.0, 0.0), direction: Vec3(0.0, 0.0, 0.0), tm: 0.0};
+    let mut attenuation: Color = Color(0.0, 0.0, 0.0);
+    let emitted = rec.mat_ptr.borrow().emitted(rec.u, rec.v, &rec.p);
+
+    if !rec.mat_ptr.borrow().scatter(r, &rec, &mut attenuation, &mut scattered) {
+        return emitted;
+    }
+
+    return emitted + attenuation * ray_color(&scattered, &background, world, depth-1);
 }
 
 fn write_color(pixel_color: Color, samples_per_pixel: u64) {
@@ -203,32 +209,75 @@ fn earth() -> HittableList {
     return objects;
 }
 
+fn simple_light() -> HittableList {
+    let mut objects: HittableList = HittableList {objects: Vec::new() };
+
+    let pertext1 = Rc::new(RefCell::new(texture::NoiseTexture { noise: Perlin::new(), scale: 4.0}));
+    let pertext2 = Rc::new(RefCell::new(texture::NoiseTexture { noise: Perlin::new(), scale: 4.0}));
+    objects.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, -1000.0, 0.0), radius: 1000.0, mat_ptr: Rc::new(RefCell::new(Lambertian{ albedo: pertext1 })) })));
+    objects.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, 2.0, 0.0), radius: 2.0, mat_ptr: Rc::new(RefCell::new(Lambertian{ albedo: pertext2 })) })));
+
+    let difflight =  Rc::new(RefCell::new(material::DiffuseLight::new(Color(4.0, 4.0, 4.0))));
+    objects.add(Rc::new(RefCell::new(aarect::XYRect::new(3.0, 5.0, 1.0, 3.0, -2.0, difflight))));
+
+    return objects;
+}
+
+fn cornell_box() -> HittableList {
+    let mut objects: HittableList = HittableList {objects: Vec::new() };
+
+    let red   = Rc::new(RefCell::new(Lambertian::new( &Color(0.65, 0.05, 0.05))));
+    let white = Rc::new(RefCell::new(Lambertian::new( &Color(0.73, 0.73, 0.73))));
+    let green = Rc::new(RefCell::new(Lambertian::new( &Color(0.12, 0.45, 0.15))));
+    let light = Rc::new(RefCell::new(material::DiffuseLight::new( Color(15.0, 15.0, 15.0))));
+
+    objects.add(Rc::new(RefCell::new( aarect::YZRect::new(0.0, 555.0, 0.0, 555.0, 555.0, green))));
+    objects.add(Rc::new(RefCell::new( aarect::YZRect::new(0.0, 555.0, 0.0, 555.0, 0.0, red))));
+    objects.add(Rc::new(RefCell::new( aarect::XZRect::new(213.0, 343.0, 227.0, 332.0, 554.0, light))));
+    objects.add(Rc::new(RefCell::new( aarect::XZRect::new(0.0, 555.0, 0.0, 555.0, 0.0, white.clone()))));
+    objects.add(Rc::new(RefCell::new( aarect::XZRect::new(0.0, 555.0, 0.0, 555.0, 555.0, white.clone()))));
+    objects.add(Rc::new(RefCell::new( aarect::XYRect::new(0.0, 555.0, 0.0, 555.0, 555.0, white.clone()))));
+    
+    let mut box1: Rc<RefCell<dyn Hittable>> = Rc::new(RefCell::new(abox::ABox::new(&Point3(0.0, 0.0, 0.0), &Point3(165.0, 330.0, 165.0), white.clone())));
+    box1 = Rc::new(RefCell::new(hittable::RotateY::new(box1, 15.0)));
+    box1 = Rc::new(RefCell::new(hittable::Translate::new(box1, Vec3(265.0, 0.0, 295.0))));
+    objects.add(box1);
+
+    let mut box2: Rc<RefCell<dyn Hittable>> = Rc::new(RefCell::new(abox::ABox::new(&Point3(0.0, 0.0, 0.0), &Point3(165.0, 165.0, 165.0), white.clone())));
+    box2 = Rc::new(RefCell::new(hittable::RotateY::new(box2, -18.0)));
+    box2 = Rc::new(RefCell::new(hittable::Translate::new(box2, Vec3(130.0, 0.0, 65.0))));
+    objects.add(box2);
+
+    return objects;
+}
+
 fn main() {
         // RNG
         let zero_to_one = Uniform::new(0.0f64, 1.0f64);
         let mut rng  = rand::thread_rng();
 
         // Image
-        const ASPECT_RATIO: f64 = 16.0/9.0;
-        const IMAGE_WIDTH: u64 = 400;
-        const IMAGE_HEIGTH: u64 = (IMAGE_WIDTH as f64/ASPECT_RATIO) as u64;
-        const SAMPLES_PER_PIXEL: u64 = 100;
+        let mut ASPECT_RATIO: f64 = 16.0/9.0;
+        let mut IMAGE_WIDTH: u64 = 400;
+        let mut SAMPLES_PER_PIXEL: u64 = 100;
         const MAX_DEPTH: u64 = 50;
     
         // World
         // let mut world = random_scene(zero_to_one);
-        let mut world: HittableList;
+        let mut world: HittableList = HittableList { objects: Vec::new() };
 
-        let lookfrom: Point3;
-        let lookat: Point3;
+        let mut lookfrom: Point3 = Point3(0.0, 0.0, 0.0);
+        let mut lookat: Point3 = Point3(0.0, 0.0, 0.0);
         let mut vfov: f64 = 40.0;
         let mut aperture: f64 = 0.0;
+        let mut background: Color = Color(0.0, 0.0, 0.0);
 
         let case: u32 = 0;
 
         match case {
             1 => {
                 world = random_scene(zero_to_one);
+                background = Color(0.70, 0.80, 1.00);
                 lookfrom = Point3(13.0, 2.0, 3.0);
                 lookat = Point3(0.0, 0.0, 0.0);
                 vfov = 20.0;
@@ -236,29 +285,56 @@ fn main() {
             },
             2 => {
                 world = two_spheres();
+                background = Color(0.70, 0.80, 1.00);
                 lookfrom = Point3(13.0, 2.0, 3.0);
                 lookat = Point3(0.0, 0.0, 0.0);
                 vfov = 20.0;
             },
             3 => {
                 world = two_perlin_spheres();
+                background = Color(0.70, 0.80, 1.00);
                 lookfrom = Point3(13.0, 2.0, 3.0);
                 lookat = Point3(0.0, 0.0, 0.0);
                 vfov= 20.0;
             },
             4 => {
                 world = earth();
+                background = Color(0.70, 0.80, 1.00);
                 lookfrom = Point3(13.0, 2.0, 3.0);
                 lookat = Point3(0.0, 0.0, 0.0);
                 vfov = 20.0;
             },
-            _ => {
-                world = earth();
-                lookfrom = Point3(13.0, 2.0, 3.0);
-                lookat = Point3(0.0, 0.0, 0.0);
+            5 => {
+                world = simple_light();
+                SAMPLES_PER_PIXEL = 400;
+                background = Color(0.0, 0.0, 0.0);
+                lookfrom = Point3(26.0, 3.0, 6.0);
+                lookat = Point3(0.0, 2.0, 0.0);
                 vfov = 20.0;
+            },
+            6 => {
+                world = cornell_box();
+                ASPECT_RATIO = 1.0;
+                IMAGE_WIDTH = 600;
+                SAMPLES_PER_PIXEL = 200;
+                background = Color(0.0, 0.0, 0.0);
+                lookfrom = Point3(278.0, 278.0, -800.0);
+                lookat = Point3(278.0, 278.0, 0.0);
+                vfov = 40.0;
+            }
+            _ => {
+                world = cornell_box();
+                ASPECT_RATIO = 1.0;
+                IMAGE_WIDTH = 600;
+                SAMPLES_PER_PIXEL = 200;
+                background = Color(0.0, 0.0, 0.0);
+                lookfrom = Point3(278.0, 278.0, -800.0);
+                lookat = Point3(278.0, 278.0, 0.0);
+                vfov = 40.0;
             }
         }
+
+        let IMAGE_HEIGTH: u64 = (IMAGE_WIDTH as f64/ASPECT_RATIO) as u64;
 
         // Camera
         // let lookfrom: Point3 = Point3(13.0, 2.0, 3.0);
@@ -283,7 +359,7 @@ fn main() {
                     let u: f64 = (i as f64 + rng.sample(zero_to_one)) / (IMAGE_WIDTH - 1) as f64;
                     let v: f64 = (j as f64 + rng.sample(zero_to_one)) / (IMAGE_HEIGTH - 1) as f64;
                     let r: Ray = cam.get_ray(u, v);
-                    pixel_color += ray_color(&r, &mut world, MAX_DEPTH);
+                    pixel_color += ray_color(&r, &background, &mut world, MAX_DEPTH);
                 }
                 write_color(pixel_color, SAMPLES_PER_PIXEL);
             }

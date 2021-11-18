@@ -1,5 +1,6 @@
 use crate::vec3::Vec3;
 use crate::vec3::Color;
+use crate::vec3::Point3;
 use crate::vec3::random_unit_vector;
 use crate::vec3::random_in_unit_sphere;
 use crate::vec3::refract;
@@ -15,6 +16,7 @@ use std::cell::RefCell;
 
 pub trait Material {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) -> bool;
+    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color;
 }
 
 pub struct Lambertian {
@@ -33,6 +35,10 @@ impl Material for Lambertian {
         *attenuation = self.albedo.borrow().value(rec.u, rec.v, &rec.p);
         true
     }
+
+    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color {
+        Color(0.0, 0.0, 0.0)
+    }
 }
 
 impl Lambertian {
@@ -46,6 +52,10 @@ pub struct DefaultMaterial;
 impl Material for DefaultMaterial {
     fn scatter(&self, _r_in: &Ray, _rec: &HitRecord, _attenuation: &mut Color, _scattered: &mut Ray) -> bool{
         true
+    }
+
+    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color {
+        Color(0.0, 0.0, 0.0)
     }
 }
 
@@ -61,6 +71,10 @@ impl Material for Metal {
         *attenuation = self.albedo;
 
         Vec3::dot(scattered.direction(), rec.normal) > 0.0
+    }
+
+    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color {
+        Color(0.0, 0.0, 0.0)
     }
 }
 
@@ -93,6 +107,10 @@ impl Material for Dialectric {
         *scattered = Ray { origin: rec.p, direction: direction, tm: r_in.time()};
         true
     }
+
+    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color {
+        Color(0.0, 0.0, 0.0)
+    }
 }
 
 impl Dialectric {
@@ -100,5 +118,27 @@ impl Dialectric {
         let mut r0: f64 = (1.0 - ref_idx) / (1.0 + ref_idx);
         r0 *= r0;
         r0 + (1.0 - r0)*(1.0 - cosine).powi(5)
+    }
+}
+
+pub struct DiffuseLight {
+    emit: Rc<RefCell<dyn Texture>>
+}
+
+impl Material for DiffuseLight {
+    fn scatter(&self, r_in: &Ray, rec: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) -> bool {
+        false
+    }
+
+    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color {
+        self.emit.borrow().value(u, v, p)
+    }
+}
+
+impl DiffuseLight {
+    pub fn new(c: Color) -> Self {
+        DiffuseLight {
+            emit: Rc::new(RefCell::new(SolidColor { color_value: c }))
+        }
     }
 }
