@@ -14,7 +14,7 @@ pub trait Texture {
 }
 
 pub struct SolidColor {
-    color_value: Color,
+    pub color_value: Color,
 }
 
 impl Texture for SolidColor {
