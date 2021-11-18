@@ -3,6 +3,7 @@ use vec3::Vec3;
 use vec3::Point3;
 use vec3::Color;
 use vec3::PI;
+use vec3::random_double_range;
 
 mod camera;
 use camera::Camera;
@@ -43,6 +44,11 @@ use perlin::Perlin;
 mod aarect;
 
 mod abox;
+
+mod constant_medium;
+use constant_medium::ConstantMedium;
+
+mod bvh_node;
 
 use std::vec::Vec;
 
@@ -200,7 +206,7 @@ fn two_perlin_spheres() -> HittableList {
 }
 
 fn earth() -> HittableList {
-    let earth_texture = Rc::new(RefCell::new(texture::ImageTexture::new(String::from("earthmap.jpg"))));
+    let earth_texture = Rc::new(RefCell::new(texture::ImageTexture::new(String::from("pluto.jpg"))));
     let earth_surface = Rc::new(RefCell::new(Lambertian{ albedo: earth_texture }));
     let globe = Rc::new(RefCell::new(Sphere { center: Point3(0.0, 0.0, 0.0), radius: 2.0, mat_ptr: earth_surface}));
 
@@ -251,6 +257,145 @@ fn cornell_box() -> HittableList {
     return objects;
 }
 
+fn cornell_smoke() -> HittableList {
+    let mut objects: HittableList = HittableList {objects: Vec::new() };
+
+    let red   = Rc::new(RefCell::new(Lambertian::new( &Color(0.65, 0.05, 0.05))));
+    let white = Rc::new(RefCell::new(Lambertian::new( &Color(0.73, 0.73, 0.73))));
+    let green = Rc::new(RefCell::new(Lambertian::new( &Color(0.12, 0.45, 0.15))));
+    let light = Rc::new(RefCell::new(material::DiffuseLight::new( Color(7.0, 7.0, 7.0))));
+
+    objects.add(Rc::new(RefCell::new( aarect::YZRect::new(0.0, 555.0, 0.0, 555.0, 555.0, green))));
+    objects.add(Rc::new(RefCell::new( aarect::YZRect::new(0.0, 555.0, 0.0, 555.0, 0.0, red))));
+    objects.add(Rc::new(RefCell::new( aarect::XZRect::new(113.0, 443.0, 127.0, 432.0, 554.0, light))));
+    objects.add(Rc::new(RefCell::new( aarect::XZRect::new(0.0, 555.0, 0.0, 555.0, 555.0, white.clone()))));
+    objects.add(Rc::new(RefCell::new( aarect::XZRect::new(0.0, 555.0, 0.0, 555.0, 0.0, white.clone()))));
+    objects.add(Rc::new(RefCell::new( aarect::XYRect::new(0.0, 555.0, 0.0, 555.0, 555.0, white.clone()))));
+    
+    let mut box1: Rc<RefCell<dyn Hittable>> = Rc::new(RefCell::new(abox::ABox::new(&Point3(0.0, 0.0, 0.0), &Point3(165.0, 330.0, 165.0), white.clone())));
+    box1 = Rc::new(RefCell::new(hittable::RotateY::new(box1, 15.0)));
+    box1 = Rc::new(RefCell::new(hittable::Translate::new(box1, Vec3(265.0, 0.0, 295.0))));
+
+    let mut box2: Rc<RefCell<dyn Hittable>> = Rc::new(RefCell::new(abox::ABox::new(&Point3(0.0, 0.0, 0.0), &Point3(165.0, 165.0, 165.0), white.clone())));
+    box2 = Rc::new(RefCell::new(hittable::RotateY::new(box2, -18.0)));
+    box2 = Rc::new(RefCell::new(hittable::Translate::new(box2, Vec3(130.0, 0.0, 65.0))));
+
+    objects.add(Rc::new(RefCell::new(ConstantMedium::new(box1, 0.01, Color(0.0, 0.0, 0.0) ))));
+    objects.add(Rc::new(RefCell::new(ConstantMedium::new(box2, 0.01, Color(1.0, 1.0, 1.0) ))));
+
+    return objects;
+}
+
+fn final_scene() -> HittableList {
+    let mut boxes1: HittableList = HittableList {objects: Vec::new() };
+    let ground = Rc::new(RefCell::new(Lambertian::new( &Color(1.20, 0.79, 0.64))));
+
+    let boxes_per_side = 20;
+    for i in 0..boxes_per_side {
+        for j in 0..boxes_per_side {
+            let w = 100.0;
+            let x0 = -1000.0 + i as f64*w;
+            let z0 = -1000.0 + j as f64*w;
+            let y0 = 0.0;
+            let x1 = x0 + w;
+            let y1 = random_double_range(1.0, 101.0);
+            let z1 = z0 + w;
+
+            boxes1.add(Rc::new(RefCell::new(abox::ABox::new(&Point3(x0,y0,z0), &Point3(x1,y1,z1), ground.clone()))));
+        }
+    }
+
+    let mut objects: HittableList = HittableList {objects: Vec::new() };
+
+    objects.add(Rc::new(RefCell::new( bvh_node::BvhNode::new(boxes1.objects.clone(), 0, boxes1.objects.len() as u16, 0.0, 1.0))));
+
+    let light = Rc::new(RefCell::new(material::DiffuseLight::new( Color(7.0, 7.0, 7.0))));
+    objects.add(Rc::new(RefCell::new( aarect::XZRect::new(123.0, 423.0, 147.0, 412.0, 554.0, light.clone()))));
+
+    let center1 = Point3(400.0, 400.0, 200.0);
+    let center2 = center1 + Vec3(30.0, 0.0, 0.0);
+    let moving_sphere_material = Rc::new(RefCell::new(Lambertian::new( &Color(1.14, 0.64, 1.20))));
+    objects.add(Rc::new(RefCell::new( MovingSphere { center0: center1,
+        center1: center2,
+        time0: 0.0,
+        time1: 1.0,
+        radius: 50.0,
+        mat_ptr: moving_sphere_material,
+    })));
+    objects.add(Rc::new(RefCell::new(
+        Sphere {
+            center: Point3(260.0, 150.0, 45.0),
+            radius: 50.0,
+            mat_ptr: Rc::new(RefCell::new(Dialectric {ir: 1.5})),
+        }
+    )));
+
+    objects.add(Rc::new(RefCell::new(
+        Sphere {
+            center: Point3(0.0, 150.0, 145.0), 
+            radius: 50.0, 
+            mat_ptr: Rc::new(RefCell::new(Metal { albedo: Color(0.8, 0.8, 0.9), fuzz: 1.0 }))
+        }
+    )));
+
+    let mut boundary = Rc::new(RefCell::new(
+        Sphere { 
+            center: Point3(360.0, 150.0, 145.0), 
+            radius: 70.0, 
+            mat_ptr: Rc::new(RefCell::new(Dialectric {ir: 1.5 }))
+    }));
+    objects.add(boundary.clone());
+    objects.add(Rc::new(RefCell::new(ConstantMedium::new(boundary.clone(), 0.2, Color(0.2, 0.4, 0.09)))));
+    boundary = Rc::new(RefCell::new(
+        Sphere {
+            center: Point3(0.0, 0.0, 0.0), 
+            radius: 5000.0, 
+            mat_ptr: Rc::new(RefCell::new(Dialectric {ir: 1.5}))
+        } 
+    ));
+    objects.add(Rc::new(RefCell::new(ConstantMedium::new(boundary.clone(), 0.0001, Color(1.0, 1.0, 1.0)))));
+
+    let emat = Rc::new(RefCell::new(texture::ImageTexture::new(String::from("pluto.jpg"))));
+    objects.add(Rc::new(RefCell::new(
+        Sphere {
+            center: Point3(400.0, 200.0, 400.0), 
+            radius: 100.0, 
+            mat_ptr: Rc::new(RefCell::new(Lambertian { albedo: emat }))
+        }
+    )));
+    let pertext = Rc::new(RefCell::new(texture::NoiseTexture { noise: Perlin::new(), scale: 0.1}));
+    objects.add(Rc::new(RefCell::new(
+        Sphere {
+            center: Point3(220.0, 280.0, 300.0), 
+            radius: 80.0, 
+            mat_ptr: Rc::new(RefCell::new(Lambertian { albedo: pertext }))
+        }
+    )));
+
+    let mut boxes2: HittableList = HittableList {objects: Vec::new() };
+    let white = Rc::new(RefCell::new(Lambertian::new( &Color(0.73, 0.73, 0.73))));
+    let ns = 1000;
+    for _j in 0..ns {
+        boxes2.add(Rc::new(RefCell::new(
+            Sphere {
+                center: Point3::random_range(0.0, 165.0), 
+                radius: 10.0, 
+                mat_ptr: white.clone()
+            }
+        )));
+    }
+
+    objects.add(Rc::new(RefCell::new(
+        hittable::Translate::new(Rc::new(RefCell::new(
+            hittable::RotateY::new(Rc::new(RefCell::new(
+                bvh_node::BvhNode::new(boxes2.objects.clone(), 0, boxes2.objects.len() as u16, 0.0, 1.0))
+            ), 15.0))), 
+        Vec3(-100.0, 270.0, 395.0))
+    )));
+
+    return objects;
+}
+
 fn main() {
         // RNG
         let zero_to_one = Uniform::new(0.0f64, 1.0f64);
@@ -272,7 +417,7 @@ fn main() {
         let mut aperture: f64 = 0.0;
         let mut background: Color = Color(0.0, 0.0, 0.0);
 
-        let case: u32 = 0;
+        let case: u32 = 8;
 
         match case {
             1 => {
@@ -322,13 +467,32 @@ fn main() {
                 lookat = Point3(278.0, 278.0, 0.0);
                 vfov = 40.0;
             }
-            _ => {
-                world = cornell_box();
+            7 => {
+                world = cornell_smoke();
                 ASPECT_RATIO = 1.0;
                 IMAGE_WIDTH = 600;
                 SAMPLES_PER_PIXEL = 200;
-                background = Color(0.0, 0.0, 0.0);
                 lookfrom = Point3(278.0, 278.0, -800.0);
+                lookat = Point3(278.0, 278.0, 0.0);
+                vfov = 40.0;
+            } 
+            8 => {
+                world = final_scene();
+                ASPECT_RATIO = 1.0;
+                IMAGE_WIDTH = 800;
+                SAMPLES_PER_PIXEL = 10000;
+                background = Color(0.0, 0.0, 0.0);
+                lookfrom = Point3(478.0, 278.0, -600.0);
+                lookat = Point3(278.0, 278.0, 0.0);
+                vfov = 40.0;
+            },
+            _ => {
+                world = final_scene();
+                ASPECT_RATIO = 1.0;
+                IMAGE_WIDTH = 100;
+                SAMPLES_PER_PIXEL = 100;
+                background = Color(0.0, 0.0, 0.0);
+                lookfrom = Point3(478.0, 278.0, -600.0);
                 lookat = Point3(278.0, 278.0, 0.0);
                 vfov = 40.0;
             }
