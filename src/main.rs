@@ -480,7 +480,7 @@ fn main() {
                 world = final_scene();
                 ASPECT_RATIO = 1.0;
                 IMAGE_WIDTH = 800;
-                SAMPLES_PER_PIXEL = 10000;
+                SAMPLES_PER_PIXEL = 10;
                 background = Color(0.0, 0.0, 0.0);
                 lookfrom = Point3(478.0, 278.0, -600.0);
                 lookat = Point3(278.0, 278.0, 0.0);
