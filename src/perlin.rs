@@ -4,6 +4,7 @@ use crate::vec3::Vec3;
 use rand::Rng;
 
 pub struct Perlin {
+    #[allow(dead_code)]
     point_count: u32,
     ranvec: [Vec3; 256],
     perm_x: [u32; 256],
@@ -14,7 +15,6 @@ pub struct Perlin {
 
 impl Perlin {
     pub fn new() -> Self {
-        let mut rng = rand::thread_rng();
         let mut ranvec: [Vec3; 256] = [Vec3(0.0, 0.0, 0.0); 256];
 
         for i in 0..256 {
@@ -61,7 +61,7 @@ impl Perlin {
         let mut temp_p = *p;
         let mut weight = 1.0;
         
-        for i in 0..7 {
+        for _i in 0..7 {
             accum += weight*self.noise(&temp_p);
             weight *= 0.5;
             temp_p *= 2.0;

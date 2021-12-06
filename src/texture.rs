@@ -18,7 +18,7 @@ pub struct SolidColor {
 }
 
 impl Texture for SolidColor {
-    fn value(&self, u: f64, v: f64, p: &Point3) -> Color {
+    fn value(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
         self.color_value
     }
 }
@@ -62,7 +62,7 @@ pub struct NoiseTexture {
 }
 
 impl Texture for NoiseTexture {
-    fn value(&self, u: f64, v: f64, p: &Point3) -> Color {
+    fn value(&self, _u: f64, _v: f64, p: &Point3) -> Color {
         Color(1.0, 1.0, 1.0) * 0.5 * (1.0 + (self.scale*p.z() + 10.0*self.noise.turb(p)).sin())
     }
 }
@@ -71,11 +71,12 @@ pub struct ImageTexture {
     data: ImageBuffer<image::Rgb<u8>, std::vec::Vec<u8>>,
     width: u32,
     height: u32,
+    #[allow(dead_code)]
     bytes_per_scanline: u32,
 }
 
 impl Texture for ImageTexture {
-    fn value(&self, u: f64, v: f64, p: &Point3) -> Color {
+    fn value(&self, u: f64, v: f64, _p: &Point3) -> Color {
         let u = if u < 0.0 { 0.0 } else if u > 1.0 { 1.0 } else { u };
         let v = 1.0 - {if v < 0.0 { 0.0 } else if v > 1.0 { 1.0 } else { v }};
 

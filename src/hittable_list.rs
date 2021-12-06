@@ -17,6 +17,7 @@ pub struct HittableList{
 } 
 
 impl HittableList {
+    #[allow(dead_code)]
     pub fn clear(&mut self) {
         self.objects.clear()
     }

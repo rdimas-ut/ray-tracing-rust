@@ -45,7 +45,7 @@ impl Hittable for XYRect {
         return true;
 
     }
-    fn bounding_box(&self, time0: f64, time1: f64, output_box: &mut AABB) -> bool {
+    fn bounding_box(&self, _time0: f64, _time1: f64, output_box: &mut AABB) -> bool {
         // The bounding box must have non-zero width in each dimension, so the z
         // dimension is padded a small amount
 
@@ -103,7 +103,7 @@ impl Hittable for XZRect {
         return true;
 
     }
-    fn bounding_box(&self, time0: f64, time1: f64, output_box: &mut AABB) -> bool {
+    fn bounding_box(&self, _time0: f64, _time1: f64, output_box: &mut AABB) -> bool {
         // The bounding box must have non-zero width in each dimension, so the z
         // dimension is padded a small amount
 
@@ -161,7 +161,7 @@ impl Hittable for YZRect {
         return true;
 
     }
-    fn bounding_box(&self, time0: f64, time1: f64, output_box: &mut AABB) -> bool {
+    fn bounding_box(&self, _time0: f64, _time1: f64, output_box: &mut AABB) -> bool {
         // The bounding box must have non-zero width in each dimension, so the z
         // dimension is padded a small amount
 

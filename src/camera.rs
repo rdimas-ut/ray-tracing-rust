@@ -38,17 +38,16 @@ impl Camera {
     pub fn new(lookfrom: Point3, lookat: Point3, vup: Vec3, vfov: f64, aspect_ratio: f64, aperture: f64, focus_dist: f64, _time0: f64, _time1: f64) -> Self  {
             let theta: f64 = degrees_to_radians(vfov);
             let h = (theta/2.0).tan();
-            let ASPECT_RATIO: f64 = aspect_ratio;
-            let VIEWPORT_HEIGHT: f64 = 2.0 * h;
-            let VIEWPORT_WIDTH: f64 = ASPECT_RATIO * VIEWPORT_HEIGHT;
+            let viewport_heigth: f64 = 2.0 * h;
+            let viewport_width: f64 = aspect_ratio * viewport_heigth;
 
             let w = Vec3::unit_vector(lookfrom - lookat);
             let u: Vec3 = Vec3::unit_vector(Vec3::cross(vup, w));
             let v: Vec3 = Vec3::cross(w, u);
 
 
-            let hor: Vec3 = focus_dist * VIEWPORT_WIDTH * u;
-            let ver: Vec3 = focus_dist * VIEWPORT_HEIGHT * v;
+            let hor: Vec3 = focus_dist * viewport_width * u;
+            let ver: Vec3 = focus_dist * viewport_heigth * v;
             
             Camera {
                 origin: lookfrom,

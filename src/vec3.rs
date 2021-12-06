@@ -207,6 +207,7 @@ pub fn random_unit_vector() -> Vec3 {
     Vec3::unit_vector(random_in_unit_sphere())
 }
 
+#[allow(dead_code)]
 pub fn random_in_hemisphere(normal: Vec3) -> Vec3{
     let in_unit_sphere = random_in_unit_sphere();
     if Vec3::dot(in_unit_sphere, normal) > 0.0 {
