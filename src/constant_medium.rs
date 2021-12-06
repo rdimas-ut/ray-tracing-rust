@@ -24,9 +24,9 @@ pub struct ConstantMedium {
 
 impl Hittable for ConstantMedium {
     fn hit(&mut self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool {
-        // Print occasional samples when debugging. To enable, set enableDebug true.
-        let enableDebug: bool = false;
-        let debugging: bool = enableDebug && random_double() < 0.00001;
+        // Print occasional samples when debugging. To enable, set enable_debug true.
+        let enable_debug: bool = false;
+        let debugging: bool = enable_debug && random_double() < 0.00001;
 
         let mut rec1: HitRecord = HitRecord {
             p: Point3(0.0, 0.0, 0.0),

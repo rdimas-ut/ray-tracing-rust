@@ -7,7 +7,6 @@ use crate::ray::Ray;
 
 use crate::material::Material;
 
-use crate::vec3::Vec3;
 use crate::vec3::Point3;
 
 use crate::aarect;
@@ -25,7 +24,7 @@ impl Hittable for ABox {
     fn hit(&mut self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool {
         return self.sides.hit(r, t_min, t_max, rec);
     }
-    fn bounding_box(&self, time0: f64, time1: f64, output_box: &mut AABB) -> bool {
+    fn bounding_box(&self, _time0: f64, _time1: f64, output_box: &mut AABB) -> bool {
         *output_box = AABB { 
             minimum: self.box_min, 
             maximum: self.box_max
@@ -35,7 +34,7 @@ impl Hittable for ABox {
 }
 
 impl ABox {
-    pub fn new(p0: &Point3, p1: &Point3, ptr: Rc<RefCell<Material>>) -> Self {
+    pub fn new(p0: &Point3, p1: &Point3, ptr: Rc<RefCell<dyn Material>>) -> Self {
         let box_min = p0;
         let box_max = p1;
 

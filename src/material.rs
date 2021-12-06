@@ -36,7 +36,7 @@ impl Material for Lambertian {
         true
     }
 
-    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color {
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
         Color(0.0, 0.0, 0.0)
     }
 }
@@ -54,7 +54,7 @@ impl Material for DefaultMaterial {
         true
     }
 
-    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color {
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
         Color(0.0, 0.0, 0.0)
     }
 }
@@ -73,7 +73,7 @@ impl Material for Metal {
         Vec3::dot(scattered.direction(), rec.normal) > 0.0
     }
 
-    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color {
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
         Color(0.0, 0.0, 0.0)
     }
 }
@@ -96,7 +96,7 @@ impl Material for Dialectric {
         let sin_theta: f64 = (1.0 - cos_theta*cos_theta).sqrt();
 
         let cannot_refract: bool = refraction_ratio * sin_theta > 1.0;
-        let mut direction: Vec3 = Vec3(0.0, 0.0, 0.0);
+        let direction: Vec3;
 
         if cannot_refract {
             direction = reflect(unit_direction, rec.normal);
@@ -108,12 +108,13 @@ impl Material for Dialectric {
         true
     }
 
-    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color {
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
         Color(0.0, 0.0, 0.0)
     }
 }
 
 impl Dialectric {
+    #[allow(dead_code)]
     fn reflectance(cosine: f64, ref_idx: f64) -> f64 {
         let mut r0: f64 = (1.0 - ref_idx) / (1.0 + ref_idx);
         r0 *= r0;
@@ -126,7 +127,7 @@ pub struct DiffuseLight {
 }
 
 impl Material for DiffuseLight {
-    fn scatter(&self, r_in: &Ray, rec: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) -> bool {
+    fn scatter(&self, _r_in: &Ray, _rec: &HitRecord, _attenuation: &mut Color, _scattered: &mut Ray) -> bool {
         false
     }
 
@@ -144,7 +145,7 @@ impl DiffuseLight {
 }
 
 pub struct Isotropic {
-    albedo: Rc<RefCell<Texture>>
+    albedo: Rc<RefCell<dyn Texture>>
 }
 
 impl Material for Isotropic {
@@ -158,7 +159,7 @@ impl Material for Isotropic {
         return true;
     }
 
-    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color {
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
         Color(0.0, 0.0, 0.0)
     }
 }

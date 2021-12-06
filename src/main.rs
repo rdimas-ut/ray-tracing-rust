@@ -2,7 +2,6 @@ mod vec3;
 use vec3::Vec3;
 use vec3::Point3;
 use vec3::Color;
-use vec3::PI;
 use vec3::random_double_range;
 
 mod camera;
@@ -20,6 +19,7 @@ use material::DefaultMaterial;
 use material::Lambertian;
 use material::Metal;
 use material::Dialectric;
+use material::Material;
 
 mod hittable_list;
 use hittable_list::HittableList;
@@ -69,7 +69,7 @@ fn clamp(x: f64, min: f64, max: f64) -> f64 {
     return x;
 }
 
-
+#[allow(dead_code)]
 fn hit_sphere(center: Point3, radius: f64, r: Ray) -> f64 {
     let oc: Vec3 = r.origin() - center;
     let a: f64 = r.direction().length_square();
@@ -135,7 +135,7 @@ fn write_color(pixel_color: Color, samples_per_pixel: u64) {
 fn random_scene(zero_to_one: rand::distributions::Uniform<f64>) -> HittableList {
     let mut world: HittableList = HittableList { objects: Vec::new() };
     let zero_to_five_tenths_dist = Uniform::new(0.0f64, 0.5f64);
-    let five_tenths_to_one_dist = Uniform::new(0.5f64, 1.0f64);
+    // let five_tenths_to_one_dist = Uniform::new(0.5f64, 1.0f64);
 
     let checker = Rc::new(RefCell::new(CheckerTexture::new(Color(0.2, 0.3, 0.1),Color(0.9, 0.9, 0.9))));
     world.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, -1000.0, 0.0), radius: 1000.0, mat_ptr: Rc::new(RefCell::new(Lambertian{ albedo: checker })) })));
@@ -146,23 +146,23 @@ fn random_scene(zero_to_one: rand::distributions::Uniform<f64>) -> HittableList 
             let center: Point3 = Point3(a as f64 + 0.9*random_double(zero_to_one), 0.2, b as f64 + 0.9*random_double(zero_to_one));
 
             if (center - Point3(4.0, 0.2, 0.0)).length() > 0.9 {
-                let sphere_material: Rc<RefCell<Lambertian>>;
+                let sphere_material: Rc<RefCell<dyn Material>>;
 
                 if choose_mat < 0.8 {
                     // diffuse
                     let albedo: Color = Color::random() * Color::random();
-                    let sphere_material = Rc::new(RefCell::new(Lambertian::new(&albedo)));
+                    sphere_material = Rc::new(RefCell::new(Lambertian::new(&albedo)));
                     let center2 = center + Vec3(0.0, random_double(zero_to_five_tenths_dist), 0.0);
                     world.add(Rc::new(RefCell::new(MovingSphere { center0: center, center1: center2, time0: 0.0, time1: 1.0, radius: 0.2, mat_ptr: sphere_material })));
                 } else if choose_mat < 0.95 {
                     // metal
                     let albedo = Color::random_range(0.5, 1.0);
                     let fuzz = random_double(zero_to_five_tenths_dist);
-                    let sphere_material = Rc::new(RefCell::new(Metal{ albedo: albedo, fuzz: fuzz }));
+                    sphere_material = Rc::new(RefCell::new(Metal{ albedo: albedo, fuzz: fuzz }));
                     world.add(Rc::new(RefCell::new(Sphere { center: center, radius: 0.2, mat_ptr: sphere_material })));
                 } else {
                     // glass
-                    let sphere_material = Rc::new(RefCell::new(Dialectric{ ir: 1.5 }));
+                    sphere_material = Rc::new(RefCell::new(Dialectric{ ir: 1.5 }));
                     world.add(Rc::new(RefCell::new(Sphere { center: center, radius: 0.2, mat_ptr: sphere_material })));
                 }
             }
@@ -306,7 +306,6 @@ fn final_scene() -> HittableList {
     }
 
     let mut objects: HittableList = HittableList {objects: Vec::new() };
-
     objects.add(Rc::new(RefCell::new( bvh_node::BvhNode::new(boxes1.objects.clone(), 0, boxes1.objects.len() as u16, 0.0, 1.0))));
 
     let light = Rc::new(RefCell::new(material::DiffuseLight::new( Color(7.0, 7.0, 7.0))));
@@ -380,7 +379,7 @@ fn final_scene() -> HittableList {
             Sphere {
                 center: Point3::random_range(0.0, 165.0), 
                 radius: 10.0, 
-                mat_ptr: white.clone()
+                mat_ptr:  white.clone()
             }
         )));
     }
@@ -402,18 +401,18 @@ fn main() {
         let mut rng  = rand::thread_rng();
 
         // Image
-        let mut ASPECT_RATIO: f64 = 16.0/9.0;
-        let mut IMAGE_WIDTH: u64 = 400;
-        let mut SAMPLES_PER_PIXEL: u64 = 100;
+        let mut aspect_ratio: f64 = 16.0/9.0;
+        let mut image_width: u64 = 400;
+        let mut samples_per_pixel: u64 = 100;
         const MAX_DEPTH: u64 = 50;
     
         // World
         // let mut world = random_scene(zero_to_one);
-        let mut world: HittableList = HittableList { objects: Vec::new() };
+        let mut world: HittableList;
 
-        let mut lookfrom: Point3 = Point3(0.0, 0.0, 0.0);
-        let mut lookat: Point3 = Point3(0.0, 0.0, 0.0);
-        let mut vfov: f64 = 40.0;
+        let lookfrom: Point3;
+        let lookat: Point3;
+        let vfov: f64;
         let mut aperture: f64 = 0.0;
         let mut background: Color = Color(0.0, 0.0, 0.0);
 
@@ -451,7 +450,7 @@ fn main() {
             },
             5 => {
                 world = simple_light();
-                SAMPLES_PER_PIXEL = 400;
+                samples_per_pixel = 400;
                 background = Color(0.0, 0.0, 0.0);
                 lookfrom = Point3(26.0, 3.0, 6.0);
                 lookat = Point3(0.0, 2.0, 0.0);
@@ -459,9 +458,9 @@ fn main() {
             },
             6 => {
                 world = cornell_box();
-                ASPECT_RATIO = 1.0;
-                IMAGE_WIDTH = 600;
-                SAMPLES_PER_PIXEL = 200;
+                aspect_ratio = 1.0;
+                image_width = 600;
+                samples_per_pixel = 200;
                 background = Color(0.0, 0.0, 0.0);
                 lookfrom = Point3(278.0, 278.0, -800.0);
                 lookat = Point3(278.0, 278.0, 0.0);
@@ -469,18 +468,18 @@ fn main() {
             }
             7 => {
                 world = cornell_smoke();
-                ASPECT_RATIO = 1.0;
-                IMAGE_WIDTH = 600;
-                SAMPLES_PER_PIXEL = 200;
+                aspect_ratio = 1.0;
+                image_width = 600;
+                samples_per_pixel = 200;
                 lookfrom = Point3(278.0, 278.0, -800.0);
                 lookat = Point3(278.0, 278.0, 0.0);
                 vfov = 40.0;
             } 
             8 => {
                 world = final_scene();
-                ASPECT_RATIO = 1.0;
-                IMAGE_WIDTH = 800;
-                SAMPLES_PER_PIXEL = 10;
+                aspect_ratio = 1.0;
+                image_width = 800;
+                samples_per_pixel = 10;
                 background = Color(0.0, 0.0, 0.0);
                 lookfrom = Point3(478.0, 278.0, -600.0);
                 lookat = Point3(278.0, 278.0, 0.0);
@@ -488,9 +487,9 @@ fn main() {
             },
             _ => {
                 world = final_scene();
-                ASPECT_RATIO = 1.0;
-                IMAGE_WIDTH = 100;
-                SAMPLES_PER_PIXEL = 100;
+                aspect_ratio = 1.0;
+                image_width = 100;
+                samples_per_pixel = 100;
                 background = Color(0.0, 0.0, 0.0);
                 lookfrom = Point3(478.0, 278.0, -600.0);
                 lookat = Point3(278.0, 278.0, 0.0);
@@ -498,7 +497,7 @@ fn main() {
             }
         }
 
-        let IMAGE_HEIGTH: u64 = (IMAGE_WIDTH as f64/ASPECT_RATIO) as u64;
+        let image_height: u64 = (image_width as f64/aspect_ratio) as u64;
 
         // Camera
         // let lookfrom: Point3 = Point3(13.0, 2.0, 3.0);
@@ -509,23 +508,23 @@ fn main() {
         let vup = Vec3(0.0, 1.0, 0.0);
         let dist_to_focus: f64 = 10.0;
 
-        // let cam: Camera = Camera::new(lookfrom, lookat, vup, 20.0, ASPECT_RATIO, aperture, dist_to_focus, 0.0, 1.0); 
-        let cam: Camera = Camera::new(lookfrom, lookat, vup, vfov, ASPECT_RATIO, aperture, dist_to_focus, 0.0, 1.0); 
+        // let cam: Camera = Camera::new(lookfrom, lookat, vup, 20.0, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0); 
+        let cam: Camera = Camera::new(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0); 
 
         // Render
-        print!("P3\n{} {}\n255\n", IMAGE_WIDTH, IMAGE_HEIGTH);
+        print!("P3\n{} {}\n255\n", image_width, image_height);
     
-        for j in (0..IMAGE_HEIGTH).rev() {
+        for j in (0..image_height).rev() {
             eprintln!("Scanlines remaining: {}", j);
-            for i in 0..IMAGE_WIDTH {
+            for i in 0..image_width {
                 let mut pixel_color: Color = Color(0.0, 0.0, 0.0);
-                for _k in 0..SAMPLES_PER_PIXEL {
-                    let u: f64 = (i as f64 + rng.sample(zero_to_one)) / (IMAGE_WIDTH - 1) as f64;
-                    let v: f64 = (j as f64 + rng.sample(zero_to_one)) / (IMAGE_HEIGTH - 1) as f64;
+                for _k in 0..samples_per_pixel {
+                    let u: f64 = (i as f64 + rng.sample(zero_to_one)) / (image_width - 1) as f64;
+                    let v: f64 = (j as f64 + rng.sample(zero_to_one)) / (image_height - 1) as f64;
                     let r: Ray = cam.get_ray(u, v);
                     pixel_color += ray_color(&r, &background, &mut world, MAX_DEPTH);
                 }
-                write_color(pixel_color, SAMPLES_PER_PIXEL);
+                write_color(pixel_color, samples_per_pixel);
             }
         }
     

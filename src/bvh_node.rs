@@ -1,7 +1,6 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use crate::vec3::Vec3;
 use crate::vec3::Point3;
 
 use rand::Rng;
@@ -10,7 +9,6 @@ use crate::hittable::Hittable;
 use crate::hittable::HitRecord;
 use crate::ray::Ray;
 
-use crate::material::DefaultMaterial;
 use crate::aabb::AABB;
 use crate::aabb::surrounding_box;
 
@@ -32,7 +30,7 @@ impl Hittable for BvhNode {
 
         hit_left || hit_right
     }
-    fn bounding_box(&self, time0: f64, time1: f64, output_box: &mut AABB) -> bool {
+    fn bounding_box(&self, _time0: f64, _time1: f64, output_box: &mut AABB) -> bool {
         *output_box = self.abox;
         true
     } 
@@ -46,15 +44,15 @@ impl BvhNode {
         let mut objects = src_objects.clone();
 
         let axis: i64 = rand::thread_rng().gen_range(0..2);
-        let comparator = box_z_compare;
+        let comparator: &dyn Fn(&Rc<RefCell<dyn Hittable>>, &Rc<RefCell<dyn Hittable>>) -> std::cmp::Ordering;
         if axis == 0 { 
-            let comparator = box_x_compare; 
+            comparator = &box_x_compare; 
         } 
         else if axis == 1 { 
-            let comparator = box_y_compare;
+            comparator = &box_y_compare;
         } 
         else { 
-            let comparator = box_z_compare;
+            comparator = &box_z_compare;
         }
         
         let object_span: u16 = end - start;
