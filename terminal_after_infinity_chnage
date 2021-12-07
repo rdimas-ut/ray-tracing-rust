@@ -1,0 +1,51 @@
+Last login: Mon Dec  6 17:57:36 on ttys004
+rubendimas@MacBook-Pro ray-tracing-rust % cd Documents/
+cd: no such file or directory: Documents/
+rubendimas@MacBook-Pro ray-tracing-rust % cargo run > image2.ppm
+   Compiling ray-tracing-rust v0.1.0 (/Users/rubendimas/Desktop/Developer/ray-tracing-rust)
+    Finished dev [unoptimized + debuginfo] target(s) in 0.43s
+     Running `target/debug/ray-tracing-rust`
+Scanlines remaining: 799
+Line:799, Pixel:0, Time elapsed: 4809939750
+Line:799, Pixel:0, Time elapsed for rand: 3637
+Line:799, Pixel:0, Time elapsed for ray: 6856
+Line:799, Pixel:0, Time elapsed for pixel color: 470406
+Line:799, Pixel:1, Time elapsed: 4877519625
+Line:799, Pixel:1, Time elapsed for rand: 3626
+Line:799, Pixel:1, Time elapsed for ray: 6808
+Line:799, Pixel:1, Time elapsed for pixel color: 477225
+Line:799, Pixel:2, Time elapsed: 4830205250
+Line:799, Pixel:2, Time elapsed for rand: 3349
+Line:799, Pixel:2, Time elapsed for ray: 6857
+Line:799, Pixel:2, Time elapsed for pixel color: 472720
+Line:799, Pixel:3, Time elapsed: 4765229583
+Line:799, Pixel:3, Time elapsed for rand: 3603
+Line:799, Pixel:3, Time elapsed for ray: 6661
+Line:799, Pixel:3, Time elapsed for pixel color: 466167
+^C
+rubendimas@MacBook-Pro ray-tracing-rust % cargo run > image2.ppm
+   Compiling ray-tracing-rust v0.1.0 (/Users/rubendimas/Desktop/Developer/ray-tracing-rust)
+    Finished dev [unoptimized + debuginfo] target(s) in 0.49s
+     Running `target/debug/ray-tracing-rust`
+Scanlines remaining: 799
+Line:799, Pixel:0, Time elapsed: 4904072583
+Line:799, Pixel:0, Time elapsed for rand: 3513
+Line:799, Pixel:0, Time elapsed for ray: 6899
+Line:799, Pixel:0, Time elapsed for pixel color: 479898
+Line:799, Pixel:1, Time elapsed: 4866002833
+Line:799, Pixel:1, Time elapsed for rand: 3661
+Line:799, Pixel:1, Time elapsed for ray: 6785
+Line:799, Pixel:1, Time elapsed for pixel color: 476059
+Line:799, Pixel:2, Time elapsed: 4855420875
+Line:799, Pixel:2, Time elapsed for rand: 3626
+Line:799, Pixel:2, Time elapsed for ray: 6686
+Line:799, Pixel:2, Time elapsed for pixel color: 475131
+Line:799, Pixel:3, Time elapsed: 4790056916
+Line:799, Pixel:3, Time elapsed for rand: 3945
+Line:799, Pixel:3, Time elapsed for ray: 6525
+Line:799, Pixel:3, Time elapsed for pixel color: 468439
+^C
+rubendimas@MacBook-Pro ray-tracing-rust % 
+
+
+
