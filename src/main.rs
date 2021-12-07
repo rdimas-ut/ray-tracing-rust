@@ -57,11 +57,8 @@ use std::cell::RefCell;
 
 use rand::Rng;
 use rand::distributions::Uniform;
-use std::f64::MAX;
 
-// Constants
-const INFINITY: f64 = MAX;
-
+use std::time::Instant;
 
 fn clamp(x: f64, min: f64, max: f64) -> f64 {
     if x < min { return min };
@@ -84,6 +81,7 @@ fn hit_sphere(center: Point3, radius: f64, r: Ray) -> f64 {
 }
 
 fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64) -> Color {
+    // eprintln!("Current Depth {}", depth);
     let mut rec: HitRecord = HitRecord {
         p: Point3(0.0, 0.0, 0.0),
         normal: Vec3(0.0, 0.0, 0.0),
@@ -99,19 +97,23 @@ fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64) 
         return Color(0.0, 0.0, 0.0);
     }
 
-    if !world.hit(&r, 0.001, INFINITY, &mut rec) {
-        return *background;
+    let now_hit = Instant::now();
+    if !world.hit(r, 0.001, f64::INFINITY, &mut rec) {
+        // eprintln!("Depth {}, returned background", depth);
+        return *background;    
     }
+    // eprintln!("world hit: {}", now_hit.elapsed().as_nanos());
 
     let mut scattered: Ray = Ray {origin: Point3(0.0, 0.0, 0.0), direction: Vec3(0.0, 0.0, 0.0), tm: 0.0};
     let mut attenuation: Color = Color(0.0, 0.0, 0.0);
     let emitted = rec.mat_ptr.borrow().emitted(rec.u, rec.v, &rec.p);
 
     if !rec.mat_ptr.borrow().scatter(r, &rec, &mut attenuation, &mut scattered) {
+        // eprintln!("Depth {}, returned emitted", depth);
         return emitted;
     }
 
-    return emitted + attenuation * ray_color(&scattered, &background, world, depth-1);
+    return emitted + attenuation * ray_color(&scattered, background, world, depth-1);
 }
 
 fn write_color(pixel_color: Color, samples_per_pixel: u64) {
@@ -416,7 +418,7 @@ fn main() {
         let mut aperture: f64 = 0.0;
         let mut background: Color = Color(0.0, 0.0, 0.0);
 
-        let case: u32 = 8;
+        let case: u32 = 10;
 
         match case {
             1 => {
@@ -488,8 +490,8 @@ fn main() {
             _ => {
                 world = final_scene();
                 aspect_ratio = 1.0;
-                image_width = 100;
-                samples_per_pixel = 100;
+                image_width = 800;
+                samples_per_pixel = 10000;
                 background = Color(0.0, 0.0, 0.0);
                 lookfrom = Point3(478.0, 278.0, -600.0);
                 lookat = Point3(278.0, 278.0, 0.0);
@@ -513,18 +515,32 @@ fn main() {
 
         // Render
         print!("P3\n{} {}\n255\n", image_width, image_height);
-    
         for j in (0..image_height).rev() {
             eprintln!("Scanlines remaining: {}", j);
             for i in 0..image_width {
+                let now = Instant::now();
                 let mut pixel_color: Color = Color(0.0, 0.0, 0.0);
+                let mut rand_t: u128 = 0;
+                let mut rand_ray: u128 = 0;
+                let mut rand_pixel: u128 = 0;
                 for _k in 0..samples_per_pixel {
-                    let u: f64 = (i as f64 + rng.sample(zero_to_one)) / (image_width - 1) as f64;
-                    let v: f64 = (j as f64 + rng.sample(zero_to_one)) / (image_height - 1) as f64;
+                    let now_r = Instant::now();
+                    let u: f64 = (i as f64 + rng.gen::<f64>()) / (image_width - 1) as f64;
+                    let v: f64 = (j as f64 + rng.gen::<f64>()) / (image_height - 1) as f64;
+                    rand_t += now_r.elapsed().as_nanos();
+                    let now_ray = Instant::now();
                     let r: Ray = cam.get_ray(u, v);
+                    rand_ray += now_ray.elapsed().as_nanos();
+                    let now_pixel = Instant::now();
                     pixel_color += ray_color(&r, &background, &mut world, MAX_DEPTH);
+                    rand_pixel += now_pixel.elapsed().as_nanos();
                 }
                 write_color(pixel_color, samples_per_pixel);
+                eprintln!("Line:{}, Pixel:{}, Time elapsed: {}", j, i, now.elapsed().as_nanos());
+                eprintln!("Line:{}, Pixel:{}, Time elapsed for rand: {}", j, i, rand_t / samples_per_pixel as u128);
+                eprintln!("Line:{}, Pixel:{}, Time elapsed for ray: {}", j, i, rand_ray / samples_per_pixel as u128);
+                eprintln!("Line:{}, Pixel:{}, Time elapsed for pixel color: {}", j, i, rand_pixel / samples_per_pixel as u128);
+
             }
         }
     

@@ -41,7 +41,7 @@ impl BvhNode {
         let left: Rc<RefCell<dyn Hittable>>;
         let right: Rc<RefCell<dyn Hittable>>;
         
-        let mut objects = src_objects.clone();
+        let mut objects = src_objects;
 
         let axis: i64 = rand::thread_rng().gen_range(0..2);
         let comparator: &dyn Fn(&Rc<RefCell<dyn Hittable>>, &Rc<RefCell<dyn Hittable>>) -> std::cmp::Ordering;
