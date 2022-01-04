@@ -12,7 +12,7 @@ use crate::material::DefaultMaterial;
 use crate::aabb::AABB;
 use crate::aabb::surrounding_box;
 
-use std::time::Instant;
+// use std::time::Instant;
 
 pub struct HittableList{
     pub objects: Vec<Rc<RefCell<dyn Hittable>>>,
@@ -41,21 +41,14 @@ impl Hittable for HittableList {
             front_face: false,
         };
         let mut hit_anything: bool = false;
-        let mut closest_so_far: f64 = t_max;
+        let mut closest_so_far: f64 = t_max.clone();
 
-        let now_hit = Instant::now();
         for object in self.objects.iter() {
-            if (*(*object)).borrow_mut().hit(r, t_min, closest_so_far, &mut temp_rec) {
+            if object.borrow_mut().hit(r, t_min, closest_so_far.clone(), &mut temp_rec) {
                 hit_anything = true;
                 closest_so_far = temp_rec.t;
-                //eprintln!("Csf: {}", closest_so_far);
+                *rec = temp_rec.clone();
             }
-        }
-        // eprintln!("Hittable list: {}", now_hit.elapsed().as_nanos());
-        // eprintln!("Number of items: {}", self.objects.len());
-
-        if hit_anything {
-            *rec = temp_rec;
         }
 
         return hit_anything;

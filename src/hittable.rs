@@ -22,7 +22,7 @@ pub struct HitRecord {
 }
 
 impl HitRecord {
-    pub fn set_face_normal(&mut self, r: Ray, outward_normal: Vec3) {
+    pub fn set_face_normal(&mut self, r: &Ray, outward_normal: Vec3) {
         self.front_face = Vec3::dot(r.direction(), outward_normal) < 0.0;
         self.normal = if self.front_face {outward_normal} else {-outward_normal};
     }
@@ -51,7 +51,7 @@ impl Hittable for Translate {
         };
 
         rec.p += self.offset;
-        rec.set_face_normal(moved_r, rec.normal);
+        rec.set_face_normal(&moved_r, rec.normal);
 
         return true;
     }
@@ -118,7 +118,7 @@ impl Hittable for RotateY {
         normal[2] = - self.sin_theta*rec.normal[0] +  self.cos_theta*rec.normal[2];
 
         rec.p = p;
-        rec.set_face_normal(rotated_r, normal);
+        rec.set_face_normal(&rotated_r, normal);
 
         return true;
     }

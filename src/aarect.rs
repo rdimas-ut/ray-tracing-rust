@@ -39,7 +39,7 @@ impl Hittable for XYRect {
         rec.v = (y-self.y0)/(self.y1-self.y0);
         rec.t = t;
         let outward_normal = Vec3(0.0, 0.0, 1.0);
-        rec.set_face_normal(*r, outward_normal);
+        rec.set_face_normal(r, outward_normal);
         rec.mat_ptr = self.mp.clone();
         rec.p = r.at(t);
         return true;
@@ -97,7 +97,7 @@ impl Hittable for XZRect {
         rec.v = (z-self.z0)/(self.z1-self.z0);
         rec.t = t;
         let outward_normal = Vec3(0.0, 1.0, 0.0);
-        rec.set_face_normal(*r, outward_normal);
+        rec.set_face_normal(r, outward_normal);
         rec.mat_ptr = self.mp.clone();
         rec.p = r.at(t);
         return true;
@@ -155,7 +155,7 @@ impl Hittable for YZRect {
         rec.v = (z-self.z0)/(self.z1-self.z0);
         rec.t = t;
         let outward_normal = Vec3(1.0, 0.0, 0.0);
-        rec.set_face_normal(*r, outward_normal);
+        rec.set_face_normal(r, outward_normal);
         rec.mat_ptr = self.mp.clone();
         rec.p = r.at(t);
         return true;

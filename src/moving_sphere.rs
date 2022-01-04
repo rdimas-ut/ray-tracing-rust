@@ -52,7 +52,7 @@ impl Hittable for MovingSphere {
         rec.t = root;
         rec.p = r.at(rec.t);
         let outward_normal: Vec3 = (rec.p - self.center(r.time())) / self.radius;
-        rec.set_face_normal(*r, outward_normal);
+        rec.set_face_normal(r, outward_normal);
         rec.mat_ptr = self.mat_ptr.clone();
 
         true

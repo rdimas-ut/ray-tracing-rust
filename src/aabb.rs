@@ -29,6 +29,22 @@ impl AABB {
             } 
         }
         true
+
+        // for a in 0..3 {
+        //     let invd = 1.0 / r.direction()[a];
+        //     let t0 = (self.minimum[a] - r.origin()[a]) * invd;
+        //     let t1 = (self.maximum[a] - r.origin()[a]) * invd;
+
+        //     if invd < 0.0 { let (t0, t1) = (t1, t0); }
+
+        //     let t_min = if t0 > t_min { t0 } else { t_min };
+        //     let t_max = if t1 > t_max { t1 } else { t_max };
+
+        //     if t_max <= t_min {
+        //         return false
+        //     }
+        // }
+        // true
     }
 }
 
