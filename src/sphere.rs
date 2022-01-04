@@ -45,7 +45,7 @@ impl Hittable for Sphere {
         rec.p = r.at(rec.t);
         rec.normal = (rec.p - self.center) / self.radius;
         let outward_normal: Vec3 = (rec.p - self.center) / self.radius;
-        rec.set_face_normal(*r, outward_normal);
+        rec.set_face_normal(r, outward_normal);
         self.get_sphere(&outward_normal, &mut rec.u, &mut rec.v);
         rec.mat_ptr = self.mat_ptr.clone();
 

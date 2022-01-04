@@ -22,7 +22,7 @@ pub struct ABox {
 
 impl Hittable for ABox {
     fn hit(&mut self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool {
-        // eprintln!("This is a box");
+        // eprintln!("box hit");
         return self.sides.hit(r, t_min, t_max, rec);
     }
     fn bounding_box(&self, _time0: f64, _time1: f64, output_box: &mut AABB) -> bool {

@@ -55,8 +55,10 @@ use std::vec::Vec;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use rand::Rng;
+// use rand::Rng;
 use rand::distributions::Uniform;
+
+use fastrand;
 
 use std::time::Instant;
 
@@ -80,12 +82,12 @@ fn hit_sphere(center: Point3, radius: f64, r: Ray) -> f64 {
     }
 }
 
-fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64) -> Color {
+fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64, mtr: &Rc<RefCell<DefaultMaterial>>) -> Color {
     // eprintln!("Current Depth {}", depth);
     let mut rec: HitRecord = HitRecord {
         p: Point3(0.0, 0.0, 0.0),
         normal: Vec3(0.0, 0.0, 0.0),
-        mat_ptr: Rc::new(RefCell::new(DefaultMaterial)),
+        mat_ptr: mtr.clone(),
         t: 0.0,
         u: 0.0,
         v: 0.0,
@@ -98,7 +100,7 @@ fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64) 
     }
 
     let now_hit = Instant::now();
-    if !world.hit(r, 0.001, f64::INFINITY, &mut rec) {
+    if !world.hit(r, 0.001, f64::INFINITY.clone(), &mut rec) {
         // eprintln!("Depth {}, returned background", depth);
         return *background;    
     }
@@ -113,7 +115,7 @@ fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64) 
         return emitted;
     }
 
-    return emitted + attenuation * ray_color(&scattered, background, world, depth-1);
+    return emitted + attenuation * ray_color(&scattered, background, world, depth-1, mtr);
 }
 
 fn write_color(pixel_color: Color, samples_per_pixel: u64) {
@@ -290,14 +292,14 @@ fn cornell_smoke() -> HittableList {
 
 fn final_scene() -> HittableList {
     let mut boxes1: HittableList = HittableList {objects: Vec::new() };
-    let ground = Rc::new(RefCell::new(Lambertian::new( &Color(1.20, 0.79, 0.64))));
+    let ground = Rc::new(RefCell::new(Lambertian::new(&Color(1.20, 0.79, 0.64))));
 
     let boxes_per_side = 20;
     for i in 0..boxes_per_side {
         for j in 0..boxes_per_side {
             let w = 100.0;
-            let x0 = -1000.0 + i as f64*w;
-            let z0 = -1000.0 + j as f64*w;
+            let x0 = -1000.0 + (i as f64*w);
+            let z0 = -1000.0 + (j as f64*w);
             let y0 = 0.0;
             let x1 = x0 + w;
             let y1 = random_double_range(1.0, 101.0);
@@ -308,10 +310,10 @@ fn final_scene() -> HittableList {
     }
 
     let mut objects: HittableList = HittableList {objects: Vec::new() };
-    objects.add(Rc::new(RefCell::new( bvh_node::BvhNode::new(boxes1.objects.clone(), 0, boxes1.objects.len() as u16, 0.0, 1.0))));
+    objects.add(Rc::new(RefCell::new(bvh_node::BvhNode::new(&boxes1.objects, 0, boxes1.objects.len(), 0.0, 1.0))));
 
     let light = Rc::new(RefCell::new(material::DiffuseLight::new( Color(7.0, 7.0, 7.0))));
-    objects.add(Rc::new(RefCell::new( aarect::XZRect::new(123.0, 423.0, 147.0, 412.0, 554.0, light.clone()))));
+    objects.add(Rc::new(RefCell::new(aarect::XZRect::new(123.0, 423.0, 147.0, 412.0, 554.0, light.clone()))));
 
     let center1 = Point3(400.0, 400.0, 200.0);
     let center2 = center1 + Vec3(30.0, 0.0, 0.0);
@@ -389,7 +391,7 @@ fn final_scene() -> HittableList {
     objects.add(Rc::new(RefCell::new(
         hittable::Translate::new(Rc::new(RefCell::new(
             hittable::RotateY::new(Rc::new(RefCell::new(
-                bvh_node::BvhNode::new(boxes2.objects.clone(), 0, boxes2.objects.len() as u16, 0.0, 1.0))
+                bvh_node::BvhNode::new(&boxes2.objects, 0, boxes2.objects.len(), 0.0, 1.0))
             ), 15.0))), 
         Vec3(-100.0, 270.0, 395.0))
     )));
@@ -418,7 +420,7 @@ fn main() {
         let mut aperture: f64 = 0.0;
         let mut background: Color = Color(0.0, 0.0, 0.0);
 
-        let case: u32 = 10;
+        let case: u32 = 6;
 
         match case {
             1 => {
@@ -480,8 +482,8 @@ fn main() {
             8 => {
                 world = final_scene();
                 aspect_ratio = 1.0;
-                image_width = 800;
-                samples_per_pixel = 10;
+                image_width = 100;
+                samples_per_pixel = 1000;
                 background = Color(0.0, 0.0, 0.0);
                 lookfrom = Point3(478.0, 278.0, -600.0);
                 lookat = Point3(278.0, 278.0, 0.0);
@@ -512,7 +514,7 @@ fn main() {
 
         // let cam: Camera = Camera::new(lookfrom, lookat, vup, 20.0, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0); 
         let cam: Camera = Camera::new(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0); 
-
+        let mtr = Rc::new(RefCell::new(DefaultMaterial));
         // Render
         print!("P3\n{} {}\n255\n", image_width, image_height);
         for j in (0..image_height).rev() {
@@ -525,14 +527,14 @@ fn main() {
                 let mut rand_pixel: u128 = 0;
                 for _k in 0..samples_per_pixel {
                     let now_r = Instant::now();
-                    let u: f64 = (i as f64 + rng.gen::<f64>()) / (image_width - 1) as f64;
-                    let v: f64 = (j as f64 + rng.gen::<f64>()) / (image_height - 1) as f64;
+                    let u: f64 = (i as f64 + fastrand::f64()) / (image_width - 1) as f64;
+                    let v: f64 = (j as f64 + fastrand::f64()) / (image_height - 1) as f64;
                     rand_t += now_r.elapsed().as_nanos();
                     let now_ray = Instant::now();
                     let r: Ray = cam.get_ray(u, v);
                     rand_ray += now_ray.elapsed().as_nanos();
                     let now_pixel = Instant::now();
-                    pixel_color += ray_color(&r, &background, &mut world, MAX_DEPTH);
+                    pixel_color += ray_color(&r, &background, &mut world, MAX_DEPTH, &mtr);
                     rand_pixel += now_pixel.elapsed().as_nanos();
                 }
                 write_color(pixel_color, samples_per_pixel);
