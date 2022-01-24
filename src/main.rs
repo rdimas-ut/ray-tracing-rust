@@ -100,7 +100,7 @@ fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64, 
     }
 
     let now_hit = Instant::now();
-    if !world.hit(r, 0.001, f64::INFINITY.clone(), &mut rec) {
+    if !world.hit(r, 0.001, f64::INFINITY, &mut rec) {
         // eprintln!("Depth {}, returned background", depth);
         return *background;    
     }
@@ -304,6 +304,7 @@ fn final_scene() -> HittableList {
             let x1 = x0 + w;
             let y1 = random_double_range(1.0, 101.0);
             let z1 = z0 + w;
+            eprintln!("p0: {} ,p1:: {}", Point3(x0,y0,z0), Point3(x1,y1,z1));
 
             boxes1.add(Rc::new(RefCell::new(abox::ABox::new(&Point3(x0,y0,z0), &Point3(x1,y1,z1), ground.clone()))));
         }
@@ -345,10 +346,10 @@ fn final_scene() -> HittableList {
         Sphere { 
             center: Point3(360.0, 150.0, 145.0), 
             radius: 70.0, 
-            mat_ptr: Rc::new(RefCell::new(Dialectric {ir: 1.5 }))
+            mat_ptr: Rc::new(RefCell::new(Dialectric {ir: 1.5}))
     }));
     objects.add(boundary.clone());
-    objects.add(Rc::new(RefCell::new(ConstantMedium::new(boundary.clone(), 0.2, Color(0.2, 0.4, 0.09)))));
+    objects.add(Rc::new(RefCell::new(ConstantMedium::new(boundary.clone(), 0.2, Color(0.2, 0.4, 0.9)))));
     boundary = Rc::new(RefCell::new(
         Sphere {
             center: Point3(0.0, 0.0, 0.0), 
@@ -420,7 +421,7 @@ fn main() {
         let mut aperture: f64 = 0.0;
         let mut background: Color = Color(0.0, 0.0, 0.0);
 
-        let case: u32 = 6;
+        let case: u32 = 8;
 
         match case {
             1 => {
@@ -482,7 +483,7 @@ fn main() {
             8 => {
                 world = final_scene();
                 aspect_ratio = 1.0;
-                image_width = 100;
+                image_width = 300;
                 samples_per_pixel = 1000;
                 background = Color(0.0, 0.0, 0.0);
                 lookfrom = Point3(478.0, 278.0, -600.0);

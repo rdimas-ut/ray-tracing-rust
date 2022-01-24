@@ -48,11 +48,11 @@ impl Hittable for ConstantMedium {
             front_face: false,
         };
 
-        if !self.boundary.borrow_mut().hit(r, -std::f64::MAX, std::f64::MAX, &mut rec1) {
+        if !self.boundary.borrow_mut().hit(r, std::f64::NEG_INFINITY, std::f64::INFINITY, &mut rec1) {
             return false;
         }
 
-        if !self.boundary.borrow_mut().hit(r, rec1.t + 0.0001, std::f64::MAX, &mut rec2) {
+        if !self.boundary.borrow_mut().hit(r, rec1.t + 0.0001, std::f64::INFINITY, &mut rec2) {
             return false;
         }
 
@@ -61,7 +61,7 @@ impl Hittable for ConstantMedium {
         } 
         
         if rec1.t < t_min { rec1.t = t_min; }
-        if rec2.t < t_max { rec2.t = t_max; }
+        if rec2.t > t_max { rec2.t = t_max; }
 
         if rec1.t >= rec2.t {
             return false;

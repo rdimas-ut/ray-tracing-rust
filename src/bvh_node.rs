@@ -42,7 +42,7 @@ impl BvhNode {
         let left: Rc<RefCell<dyn Hittable>>;
         let right: Rc<RefCell<dyn Hittable>>;
         
-        let mut objects = src_objects.to_vec();
+        let mut objects = src_objects.clone();
 
         let axis: i64 = rand::thread_rng().gen_range(0..3);
         let comparator: &dyn Fn(&Rc<RefCell<dyn Hittable>>, &Rc<RefCell<dyn Hittable>>) -> std::cmp::Ordering;
@@ -59,22 +59,22 @@ impl BvhNode {
         let object_span: usize = end - start;
 
         if object_span == 1 {
-            left = objects[start].clone();
-            right = objects[start].clone();
+            left = Rc::clone(&objects[start]);
+            right = Rc::clone(&objects[start]);
         } else if object_span == 2 {
             if comparator(&objects[start], &objects[start+1]) == std::cmp::Ordering::Less {
-                left = objects[start].clone();
-                right = objects[start+1].clone();
+                left = Rc::clone(&objects[start]);
+                right = Rc::clone(&objects[start+1]);
             } else {
-                left = objects[start+1].clone();
-                right = objects[start].clone();
+                left = Rc::clone(&objects[start+1]);
+                right = Rc::clone(&objects[start]);
             }
         } else {
             objects[start..end].sort_unstable_by(comparator);
 
             let mid: usize = start + (object_span/2);
-            left = Rc::new(RefCell::new(BvhNode::new(&objects.clone(), start, mid, time0, time1)));
-            right = Rc::new(RefCell::new(BvhNode::new(&objects.clone(), mid, end, time0, time1)));
+            left = Rc::new(RefCell::new(BvhNode::new(&objects, start, mid, time0, time1)));
+            right = Rc::new(RefCell::new(BvhNode::new(&objects, mid, end, time0, time1)));
         }
 
         let mut box_left: AABB = AABB {
@@ -111,14 +111,15 @@ fn box_compare(a: &Rc<RefCell<dyn Hittable>>, b: &Rc<RefCell<dyn Hittable>>, axi
     if !a.borrow_mut().bounding_box(0.0, 0.0, &mut box_a) || !b.borrow_mut().bounding_box(0.0, 0.0,&mut box_b) {
         println!("No bounding box in bvh_node consctructor.");
     }
+    box_a.min()[axis].partial_cmp(&box_b.min()[axis]).expect("unexpected NaN in bounding box y")
 
-    if box_a.min()[axis] < box_b.min()[axis] {
-        return std::cmp::Ordering::Less;
-    } else if box_a.min()[axis] > box_b.min()[axis] {
-        return std::cmp::Ordering::Greater;
-    } else {
-        return std::cmp::Ordering::Equal;
-    }
+    // if box_a.min()[axis] < box_b.min()[axis] {
+    //     return std::cmp::Ordering::Less;
+    // } else if box_a.max()[axis] > box_b.max()[axis] {
+    //     return std::cmp::Ordering::Greater;
+    // } else {
+    //     return std::cmp::Ordering::Equal;
+    // }
 }
 
 fn box_x_compare(a: &Rc<RefCell<dyn Hittable>>, b: &Rc<RefCell<dyn Hittable>>) -> std::cmp::Ordering {

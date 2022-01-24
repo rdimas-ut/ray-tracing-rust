@@ -11,6 +11,7 @@ use crate::ray::Ray;
 use crate::material::DefaultMaterial;
 use crate::aabb::AABB;
 use crate::aabb::surrounding_box;
+use std::fmt::Display;
 
 // use std::time::Instant;
 
@@ -55,7 +56,7 @@ impl Hittable for HittableList {
     }
 
     fn bounding_box(&self, time0: f64, time1: f64, output_box: &mut AABB) -> bool {
-        if self.objects.len() == 0 {
+        if self.objects.is_empty() {
             return false;
         }
 
