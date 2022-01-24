@@ -1,6 +1,7 @@
 use crate::vec3::Vec3;
 use crate::vec3::Color;
 use crate::vec3::Point3;
+use crate::vec3::random_double_range;
 use crate::vec3::random_unit_vector;
 use crate::vec3::random_in_unit_sphere;
 use crate::vec3::refract;
@@ -66,7 +67,7 @@ pub struct Metal {
 
 impl Material for Metal {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) -> bool {
-        let reflected = reflect(Vec3::unit_vector(r_in.direction()), rec.normal);
+        let reflected = reflect(&Vec3::unit_vector(r_in.direction()), &rec.normal);
         *scattered = Ray {origin: rec.p, direction: reflected + self.fuzz*random_in_unit_sphere(), tm: r_in.time()};
         *attenuation = self.albedo;
 
@@ -78,8 +79,8 @@ impl Material for Metal {
     }
 }
 
-pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
-    v - 2.0*Vec3::dot(v, n)*n
+pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
+    *v - 2.0*Vec3::dot(*v, *n)**n
 }
 
 pub struct Dialectric {
@@ -98,8 +99,8 @@ impl Material for Dialectric {
         let cannot_refract: bool = refraction_ratio * sin_theta > 1.0;
         let direction: Vec3;
 
-        if cannot_refract {
-            direction = reflect(unit_direction, rec.normal);
+        if cannot_refract || Dialectric::reflectance(cos_theta, refraction_ratio) > random_double_range(0.0, 1.0) {
+            direction = reflect(&unit_direction, &rec.normal);
         } else {
             direction = refract(&unit_direction, &rec.normal, refraction_ratio)
         }
@@ -114,10 +115,9 @@ impl Material for Dialectric {
 }
 
 impl Dialectric {
-    #[allow(dead_code)]
     fn reflectance(cosine: f64, ref_idx: f64) -> f64 {
         let mut r0: f64 = (1.0 - ref_idx) / (1.0 + ref_idx);
-        r0 *= r0;
+        r0 = r0.powi(2);
         r0 + (1.0 - r0)*(1.0 - cosine).powi(5)
     }
 }
