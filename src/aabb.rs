@@ -18,11 +18,15 @@ impl AABB {
 
     pub fn hit(&self, r: &Ray, t_min: f64, t_max:f64) -> bool {
         for a in 0..3 {
-            let t0 = (self.minimum[a] - r.origin()[a] / r.direction()[a]).min(self.maximum[a] - r.origin()[a] / r.direction()[a]);
-            let t1 = (self.minimum[a] - r.origin()[a] / r.direction()[a]).max(self.maximum[a] - r.origin()[a] / r.direction()[a]);
+            let t0 = ((self.minimum[a] - r.origin()[a]) / r.direction()[a]).min((self.maximum[a] - r.origin()[a]) / r.direction()[a]);
+            let t1 = ((self.minimum[a] - r.origin()[a]) / r.direction()[a]).max((self.maximum[a] - r.origin()[a]) / r.direction()[a]);
             
             let t_min = t0.max(t_min);
             let t_max = t1.min(t_max);
+
+            if t_min.is_infinite() || t_min.is_nan() {
+                eprintln!("t_min issues");
+            }
 
             if t_max <= t_min {
                 return false;

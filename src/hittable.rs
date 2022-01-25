@@ -140,8 +140,8 @@ impl RotateY {
          };
         let hasbox = p.borrow().bounding_box(0.0, 1.0, &mut bbox);
 
-        let mut min = Point3( std::f64::MAX,  std::f64::MAX,  std::f64::MAX);
-        let mut max = Point3(-std::f64::MAX, -std::f64::MAX, -std::f64::MAX);
+        let mut min = Point3(f64::INFINITY,  f64::INFINITY,  f64::INFINITY);
+        let mut max = Point3(f64::NEG_INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY);
 
         for i in 0..2 {
             for j in 0..2 {
