@@ -6,5 +6,12 @@ Final render scene is shown below. All other renders made while working through 
 
 ![Image 21](output/image_21.png)
 
+This also includes the code for the second book the series, [Ray Tracing: the Next Week](https://raytracing.github.io/books/RayTracingTheNextWeek.html). 
+
+Final render for the second book is shown below.
+
+![Image 21](n.png)
+
 ## Reference
 [_Ray Tracing in One Weekend_](https://raytracing.github.io/books/RayTracingInOneWeekend.html)
+[_Ray Tracing: the Next Week_](https://raytracing.github.io/books/RayTracingTheNextWeek.html)

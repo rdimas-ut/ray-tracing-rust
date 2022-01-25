@@ -11,7 +11,6 @@ use crate::ray::Ray;
 use crate::material::DefaultMaterial;
 use crate::aabb::AABB;
 use crate::aabb::surrounding_box;
-use std::fmt::Display;
 
 // use std::time::Instant;
 
