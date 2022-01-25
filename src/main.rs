@@ -99,7 +99,7 @@ fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64, 
         return Color(0.0, 0.0, 0.0);
     }
 
-    let now_hit = Instant::now();
+    // let now_hit = Instant::now();
     if !world.hit(r, 0.001, f64::INFINITY, &mut rec) {
         // eprintln!("Depth {}, returned background", depth);
         return *background;    
