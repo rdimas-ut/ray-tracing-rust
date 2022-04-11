@@ -17,17 +17,23 @@ impl AABB {
     }
 
     pub fn hit(&self, r: &Ray, t_min: f64, t_max:f64) -> bool {
+        let mut t_min = t_min;
+        let mut t_max = t_max;
+
         for a in 0..3 {
             let t0 = ((self.minimum[a] - r.origin()[a]) / r.direction()[a]).min((self.maximum[a] - r.origin()[a]) / r.direction()[a]);
             let t1 = ((self.minimum[a] - r.origin()[a]) / r.direction()[a]).max((self.maximum[a] - r.origin()[a]) / r.direction()[a]);
             
-            let t_min = t0.max(t_min);
-            let t_max = t1.min(t_max);
+            t_min = t0.max(t_min);
+            t_max = t1.min(t_max);
 
             if t_min.is_infinite() || t_min.is_nan() {
                 eprintln!("t_min issues");
             }
-
+            
+            // eprintln!("t0: {}, t1: {}", t0, t1);
+            //eprintln!("t_min: {}, t_max: {}", t_min, t_max);
+            // eprintln!("f_min: {}, f_max: {}", f_min, f_max);
             if t_max <= t_min {
                 return false;
             } 
@@ -36,13 +42,17 @@ impl AABB {
 
         // for a in 0..3 {
         //     let invd = 1.0 / r.direction()[a];
-        //     let t0 = (self.minimum[a] - r.origin()[a]) * invd;
-        //     let t1 = (self.maximum[a] - r.origin()[a]) * invd;
+        //     let mut t0 = (self.minimum[a] - r.origin()[a]) * invd;
+        //     let mut t1 = (self.maximum[a] - r.origin()[a]) * invd;
 
-        //     if invd < 0.0 { let (t0, t1) = (t1, t0); }
+        //     if invd < 0.0 {
+        //         let t2 = t0;
+        //         t0 = t1;
+        //         t1 = t2;
+        //     }
 
-        //     let t_min = if t0 > t_min { t0 } else { t_min };
-        //     let t_max = if t1 > t_max { t1 } else { t_max };
+        //     t_min = if t0 > t_min { t0 } else { t_min };
+        //     t_max = if t1 < t_max { t1 } else { t_max };
 
         //     if t_max <= t_min {
         //         return false
