@@ -22,7 +22,10 @@ pub struct BvhNode {
 impl Hittable for BvhNode {
     fn hit(&mut self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool {
         if !self.abox.hit(r, t_min, t_max) {
+            // eprintln!("Box no hit parameters, min: {}, max: {}", self.abox.min(), self.abox.max());
             return false;
+        } else {
+            // eprintln!("Box hit parameters, min: {}, max: {}", self.abox.min(), self.abox.max());
         }
 
         let hit_left: bool = self.left.borrow_mut().hit(r, t_min, t_max, rec);
@@ -38,11 +41,11 @@ impl Hittable for BvhNode {
 }
 
 impl BvhNode {
-    pub fn new(src_objects: &Vec<Rc<RefCell<dyn Hittable>>>, start: usize, end:usize, time0: f64, time1: f64) -> Self {
+    pub fn new(src_objects: &mut Vec<Rc<RefCell<dyn Hittable>>>, start: usize, end:usize, time0: f64, time1: f64) -> Self {
         let left: Rc<RefCell<dyn Hittable>>;
         let right: Rc<RefCell<dyn Hittable>>;
         
-        let mut objects = src_objects.clone();
+        let mut objects = src_objects;
 
         let axis: i64 = rand::thread_rng().gen_range(0..3);
         let comparator: &dyn Fn(&Rc<RefCell<dyn Hittable>>, &Rc<RefCell<dyn Hittable>>) -> std::cmp::Ordering;
@@ -76,8 +79,8 @@ impl BvhNode {
             objects[start..end].sort_unstable_by(comparator);
 
             let mid: usize = start + (object_span/2);
-            left = Rc::new(RefCell::new(BvhNode::new(&objects, start, mid, time0, time1)));
-            right = Rc::new(RefCell::new(BvhNode::new(&objects, mid, end, time0, time1)));
+            left = Rc::new(RefCell::new(BvhNode::new(&mut objects, start, mid, time0, time1)));
+            right = Rc::new(RefCell::new(BvhNode::new(&mut objects, mid, end, time0, time1)));
             eprintln!("left: {}, {} right: {}, {}", start, mid, mid, end);
         }
 

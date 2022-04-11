@@ -54,6 +54,7 @@ use std::vec::Vec;
 
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::sync::Arc;
 
 // use rand::Rng;
 use rand::distributions::Uniform;
@@ -83,7 +84,7 @@ fn hit_sphere(center: Point3, radius: f64, r: Ray) -> f64 {
 }
 
 fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64, mtr: &Rc<RefCell<DefaultMaterial>>) -> Color {
-    // eprintln!("Current Depth {}", depth);
+    //eprintln!("Current Depth {}", depth);
     let mut rec: HitRecord = HitRecord {
         p: Point3(0.0, 0.0, 0.0),
         normal: Vec3(0.0, 0.0, 0.0),
@@ -99,19 +100,20 @@ fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64, 
         return Color(0.0, 0.0, 0.0);
     }
 
-    // let now_hit = Instant::now();
+    let now_hit = Instant::now();
     if !world.hit(r, 0.001, f64::INFINITY, &mut rec) {
-        // eprintln!("Depth {}, returned background", depth);
+        //eprintln!("no world hit at: {}", depth);
+        //eprintln!("no world hit time: {}", now_hit.elapsed().as_nanos());
         return *background;    
     }
-    // eprintln!("world hit: {}", now_hit.elapsed().as_nanos());
+    //eprintln!("world hit time: {}", now_hit.elapsed().as_nanos());
 
     let mut scattered: Ray = Ray {origin: Point3(0.0, 0.0, 0.0), direction: Vec3(0.0, 0.0, 0.0), tm: 0.0};
     let mut attenuation: Color = Color(0.0, 0.0, 0.0);
     let emitted = rec.mat_ptr.borrow().emitted(rec.u, rec.v, &rec.p);
 
     if !rec.mat_ptr.borrow().scatter(r, &rec, &mut attenuation, &mut scattered) {
-        // eprintln!("Depth {}, returned emitted", depth);
+        //eprintln!("Depth {}, returned emitted", depth);
         return emitted;
     }
 
@@ -139,10 +141,61 @@ fn write_color(pixel_color: Color, samples_per_pixel: u64) {
 fn random_scene(zero_to_one: rand::distributions::Uniform<f64>) -> HittableList {
     let mut world: HittableList = HittableList { objects: Vec::new() };
     let zero_to_five_tenths_dist = Uniform::new(0.0f64, 0.5f64);
+    let five_tenths_to_one_dist = Uniform::new(0.5f64, 1.0f64);
+
+    let ground_material = Rc::new(RefCell::new(Lambertian::new(&Color(0.5, 0.5, 0.5))));
+    world.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, -1000.0, 0.0), radius: 1000.0, mat_ptr: ground_material })));
+
+    for a in -11..11 {
+        for b in -11..11 {
+            let choose_mat: f64 = random_double(zero_to_one);
+            let center: Point3 = Point3(a as f64 + 0.9*random_double(zero_to_one), 0.2, b as f64 + 0.9*random_double(zero_to_one));
+
+            if (center - Point3(4.0, 0.2, 0.0)).length() > 0.9 {
+                let _sphere_material = Rc::new(RefCell::new(Lambertian::new(&Color(0.8, 0.8, 0.0))));
+
+                if choose_mat < 0.8 {
+                    // diffuse
+                    let albedo: Color = Color::random() * Color::random();
+                    let sphere_material = Rc::new(RefCell::new(Lambertian::new(&albedo)));
+                    world.add(Rc::new(RefCell::new(Sphere { center: center, radius: 0.2, mat_ptr: sphere_material })));
+                } else if choose_mat < 0.95 {
+                    // metal
+                    let albedo = Color::random_range(0.5, 1.0);
+                    let fuzz = random_double(zero_to_five_tenths_dist);
+                    let sphere_material = Rc::new(RefCell::new(Metal{ albedo: albedo, fuzz: fuzz }));
+                    world.add(Rc::new(RefCell::new(Sphere { center: center, radius: 0.2, mat_ptr: sphere_material })));
+                } else {
+                    // glass
+                    let sphere_material = Rc::new(RefCell::new(Dialectric{ ir: 1.5 }));
+                    world.add(Rc::new(RefCell::new(Sphere { center: center, radius: 0.2, mat_ptr: sphere_material })));
+                }
+            }
+        }
+    }
+
+    
+    let material1 = Rc::new(RefCell::new(Dialectric{ ir: 1.5 }));
+    world.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, 1.0, 0.0), radius: 1.0, mat_ptr: material1 })));
+
+    let material2 = Rc::new(RefCell::new(Lambertian::new(&Color(0.4, 0.2, 0.1))));
+    world.add(Rc::new(RefCell::new(Sphere { center: Point3(-4.0, 1.0, 0.0), radius: 1.0, mat_ptr: material2 })));
+
+    let material3 = Rc::new(RefCell::new(Metal{ albedo: Color(0.7, 0.6, 0.5), fuzz: 0.0 }));
+    world.add(Rc::new(RefCell::new(Sphere { center: Point3(4.0, 1.0, 0.0), radius: 1.0, mat_ptr: material3 })));
+
+    return world;
+}
+
+fn random_scene_book2(zero_to_one: rand::distributions::Uniform<f64>) -> HittableList {
+    let mut world: HittableList = HittableList { objects: Vec::new() };
+    let zero_to_five_tenths_dist = Uniform::new(0.0f64, 0.5f64);
     // let five_tenths_to_one_dist = Uniform::new(0.5f64, 1.0f64);
 
-    let checker = Rc::new(RefCell::new(CheckerTexture::new(Color(0.2, 0.3, 0.1),Color(0.9, 0.9, 0.9))));
-    world.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, -1000.0, 0.0), radius: 1000.0, mat_ptr: Rc::new(RefCell::new(Lambertian{ albedo: checker })) })));
+    let ground_material = Rc::new(RefCell::new(Lambertian::new(&Color(0.5, 0.5, 0.5))));
+    world.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, -1000.0, 0.0), radius: 1000.0, mat_ptr: ground_material})));
+    // let checker = Rc::new(RefCell::new(CheckerTexture::new(Color(0.2, 0.3, 0.1),Color(0.9, 0.9, 0.9))));
+    // world.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, -1000.0, 0.0), radius: 1000.0, mat_ptr: Rc::new(RefCell::new(Lambertian{ albedo: checker })) })));
 
     for a in -11..11 {
         for b in -11..11 {
@@ -304,14 +357,22 @@ fn final_scene() -> HittableList {
             let x1 = x0 + w;
             let y1 = random_double_range(1.0, 101.0);
             let z1 = z0 + w;
-            eprintln!("p0: {} ,p1:: {}", Point3(x0,y0,z0), Point3(x1,y1,z1));
+            // eprintln!("p0: {} ,p1:: {}", Point3(x0,y0,z0), Point3(x1,y1,z1));
 
             boxes1.add(Rc::new(RefCell::new(abox::ABox::new(&Point3(x0,y0,z0), &Point3(x1,y1,z1), ground.clone()))));
+            //boxes1.push(Box::new(abox::ABox::new(&Point3(x0,y0,z0), &Point3(x1,y1,z1), ground.clone())));
+
+            // boxes1.push(Block::new_hittable(
+            //     Vec3(x0, y0, z0),
+            //     Vec3(x1, y1, z1),
+            //     ground.clone(),
+            // ));
         }
     }
 
     let mut objects: HittableList = HittableList {objects: Vec::new() };
-    objects.add(Rc::new(RefCell::new(bvh_node::BvhNode::new(&boxes1.objects, 0, boxes1.objects.len(), 0.0, 1.0))));
+    let boxes1_len = boxes1.objects.len();
+    objects.add(Rc::new(RefCell::new(bvh_node::BvhNode::new(&mut boxes1.objects, 0, boxes1_len, 0.0, 1.0))));
 
     let light = Rc::new(RefCell::new(material::DiffuseLight::new( Color(7.0, 7.0, 7.0))));
     objects.add(Rc::new(RefCell::new(aarect::XZRect::new(123.0, 423.0, 147.0, 412.0, 554.0, light.clone()))));
@@ -389,10 +450,11 @@ fn final_scene() -> HittableList {
         )));
     }
 
+    let boxes2_len = boxes2.objects.len();
     objects.add(Rc::new(RefCell::new(
         hittable::Translate::new(Rc::new(RefCell::new(
             hittable::RotateY::new(Rc::new(RefCell::new(
-                bvh_node::BvhNode::new(&boxes2.objects, 0, boxes2.objects.len(), 0.0, 1.0))
+                bvh_node::BvhNode::new(&mut boxes2.objects, 0, boxes2_len, 0.0, 1.0))
             ), 15.0))), 
         Vec3(-100.0, 270.0, 395.0))
     )));
@@ -421,7 +483,7 @@ fn final_scene_a() -> HittableList {
     }
 
     let mut objects: HittableList = HittableList {objects: Vec::new() };
-    objects.add(Rc::new(RefCell::new(bvh_node::BvhNode::new(&boxes1.objects, 0, boxes1.objects.len(), 0.0, 1.0))));
+    // objects.add(Rc::new(RefCell::new(bvh_node::BvhNode::new(&mut boxes1.objects, 0, boxes1.objects.len(), 0.0, 1.0))));
 
     let light = Rc::new(RefCell::new(material::DiffuseLight::new( Color(7.0, 7.0, 7.0))));
     objects.add(Rc::new(RefCell::new(aarect::XZRect::new(123.0, 423.0, 147.0, 412.0, 554.0, light.clone()))));
@@ -514,8 +576,8 @@ fn main() {
 
         // Image
         let mut aspect_ratio: f64 = 16.0/9.0;
-        let mut image_width: u64 = 400;
-        let mut samples_per_pixel: u64 = 100;
+        let mut image_width: u64 = 600;
+        let mut samples_per_pixel: u64 = 10;
         const MAX_DEPTH: u64 = 50;
     
         // World
@@ -528,7 +590,7 @@ fn main() {
         let mut aperture: f64 = 0.0;
         let mut background: Color = Color(0.0, 0.0, 0.0);
 
-        let case: u32 = 8;
+        let case: u32 = 1;
 
         match case {
             1 => {
@@ -590,8 +652,8 @@ fn main() {
             8 => {
                 world = final_scene();
                 aspect_ratio = 1.0;
-                image_width = 400;
-                samples_per_pixel = 1000;
+                image_width = 800;
+                samples_per_pixel = 50;
                 background = Color(0.0, 0.0, 0.0);
                 lookfrom = Point3(478.0, 278.0, -600.0);
                 lookat = Point3(278.0, 278.0, 0.0);
@@ -640,19 +702,16 @@ fn main() {
                     rand_t += now_r.elapsed().as_nanos();
                     let now_ray = Instant::now();
                     let r: Ray = cam.get_ray(u, v);
-                    if j == 200 {
-                        eprintln!("Ray: {}, {}", r.origin(), r.direction());
-                    }
                     rand_ray += now_ray.elapsed().as_nanos();
                     let now_pixel = Instant::now();
                     pixel_color += ray_color(&r, &background, &mut world, MAX_DEPTH, &mtr);
                     rand_pixel += now_pixel.elapsed().as_nanos();
                 }
                 write_color(pixel_color, samples_per_pixel);
-                eprintln!("Line:{}, Pixel:{}, Time elapsed: {}", j, i, now.elapsed().as_nanos());
-                eprintln!("Line:{}, Pixel:{}, Time elapsed for rand: {}", j, i, rand_t / samples_per_pixel as u128);
-                eprintln!("Line:{}, Pixel:{}, Time elapsed for ray: {}", j, i, rand_ray / samples_per_pixel as u128);
-                eprintln!("Line:{}, Pixel:{}, Time elapsed for pixel color: {}", j, i, rand_pixel / samples_per_pixel as u128);
+                // eprintln!("Line:{}, Pixel:{}, Time elapsed: {}", j, i, now.elapsed().as_nanos());
+                // eprintln!("Line:{}, Pixel:{}, Time elapsed for rand: {}", j, i, rand_t / samples_per_pixel as u128);
+                // eprintln!("Line:{}, Pixel:{}, Time elapsed for ray: {}", j, i, rand_ray / samples_per_pixel as u128);
+                // eprintln!("Line:{}, Pixel:{}, Time elapsed for pixel color: {}", j, i, rand_pixel / samples_per_pixel as u128);
 
             }
         }

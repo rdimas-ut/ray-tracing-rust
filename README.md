@@ -10,7 +10,7 @@ This also includes the code for the second book the series, [Ray Tracing: the Ne
 
 Final render for the second book is shown below.
 
-![Image 21](output/n.png)
+![Image 21](output/image_38.png)
 
 ## Reference
 [_Ray Tracing in One Weekend_](https://raytracing.github.io/books/RayTracingInOneWeekend.html)

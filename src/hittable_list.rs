@@ -41,14 +41,20 @@ impl Hittable for HittableList {
             front_face: false,
         };
         let mut hit_anything: bool = false;
-        let mut closest_so_far: f64 = t_max.clone();
+        let mut closest_so_far: f64 = t_max;
+        let mut i: u32 = 0;
 
         for object in self.objects.iter() {
-            if object.borrow_mut().hit(r, t_min, closest_so_far.clone(), &mut temp_rec) {
+            let now_hit = std::time::Instant::now();
+            let j = object.borrow_mut().hit(r, t_min, closest_so_far, &mut temp_rec);
+            // eprintln!("items: {}, item: {},  time: {}", self.objects.len(), i,now_hit.elapsed().as_nanos());
+            if j {
+                //eprintln!("item hit: {}", i);
                 hit_anything = true;
                 closest_so_far = temp_rec.t;
                 *rec = temp_rec.clone();
             }
+            i += 1;
         }
 
         return hit_anything;
