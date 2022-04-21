@@ -30,10 +30,7 @@ impl AABB {
             if t_min.is_infinite() || t_min.is_nan() {
                 eprintln!("t_min issues");
             }
-            
-            // eprintln!("t0: {}, t1: {}", t0, t1);
-            //eprintln!("t_min: {}, t_max: {}", t_min, t_max);
-            // eprintln!("f_min: {}, f_max: {}", f_min, f_max);
+        
             if t_max <= t_min {
                 return false;
             } 

@@ -21,13 +21,6 @@ pub struct BvhNode {
 
 impl Hittable for BvhNode {
     fn hit(&mut self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool {
-        if !self.abox.hit(r, t_min, t_max) {
-            // eprintln!("Box no hit parameters, min: {}, max: {}", self.abox.min(), self.abox.max());
-            return false;
-        } else {
-            // eprintln!("Box hit parameters, min: {}, max: {}", self.abox.min(), self.abox.max());
-        }
-
         let hit_left: bool = self.left.borrow_mut().hit(r, t_min, t_max, rec);
         let hit_right: bool = self.right.borrow_mut().hit(r, t_min, if hit_left { rec.t } else { t_max }, rec);
 
