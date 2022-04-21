@@ -84,7 +84,6 @@ fn hit_sphere(center: Point3, radius: f64, r: Ray) -> f64 {
 }
 
 fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64, mtr: &Rc<RefCell<DefaultMaterial>>) -> Color {
-    //eprintln!("Current Depth {}", depth);
     let mut rec: HitRecord = HitRecord {
         p: Point3(0.0, 0.0, 0.0),
         normal: Vec3(0.0, 0.0, 0.0),
@@ -102,18 +101,14 @@ fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64, 
 
     let now_hit = Instant::now();
     if !world.hit(r, 0.001, f64::INFINITY, &mut rec) {
-        //eprintln!("no world hit at: {}", depth);
-        //eprintln!("no world hit time: {}", now_hit.elapsed().as_nanos());
         return *background;    
     }
-    //eprintln!("world hit time: {}", now_hit.elapsed().as_nanos());
 
     let mut scattered: Ray = Ray {origin: Point3(0.0, 0.0, 0.0), direction: Vec3(0.0, 0.0, 0.0), tm: 0.0};
     let mut attenuation: Color = Color(0.0, 0.0, 0.0);
     let emitted = rec.mat_ptr.borrow().emitted(rec.u, rec.v, &rec.p);
 
     if !rec.mat_ptr.borrow().scatter(r, &rec, &mut attenuation, &mut scattered) {
-        //eprintln!("Depth {}, returned emitted", depth);
         return emitted;
     }
 
@@ -357,7 +352,6 @@ fn final_scene() -> HittableList {
             let x1 = x0 + w;
             let y1 = random_double_range(1.0, 101.0);
             let z1 = z0 + w;
-            // eprintln!("p0: {} ,p1:: {}", Point3(x0,y0,z0), Point3(x1,y1,z1));
 
             boxes1.add(Rc::new(RefCell::new(abox::ABox::new(&Point3(x0,y0,z0), &Point3(x1,y1,z1), ground.clone()))));
             //boxes1.push(Box::new(abox::ABox::new(&Point3(x0,y0,z0), &Point3(x1,y1,z1), ground.clone())));
@@ -458,113 +452,6 @@ fn final_scene() -> HittableList {
             ), 15.0))), 
         Vec3(-100.0, 270.0, 395.0))
     )));
-
-    return objects;
-}
-
-fn final_scene_a() -> HittableList {
-    let mut boxes1: HittableList = HittableList {objects: Vec::new() };
-    let ground = Rc::new(RefCell::new(Lambertian::new(&Color(1.20, 0.79, 0.64))));
-
-    let boxes_per_side = 20;
-    for i in 0..boxes_per_side {
-        for j in 0..boxes_per_side {
-            let w = 100.0;
-            let x0 = -1000.0 + (i as f64*w);
-            let z0 = -1000.0 + (j as f64*w);
-            let y0 = 0.0;
-            let x1 = x0 + w;
-            let y1 = random_double_range(1.0, 101.0);
-            let z1 = z0 + w;
-            // eprintln!("p0: {} ,p1:: {}", Point3(x0,y0,z0), Point3(x1,y1,z1));
-
-            boxes1.add(Rc::new(RefCell::new(abox::ABox::new(&Point3(x0,y0,z0), &Point3(x1,y1,z1), ground.clone()))));
-        }
-    }
-
-    let mut objects: HittableList = HittableList {objects: Vec::new() };
-    // objects.add(Rc::new(RefCell::new(bvh_node::BvhNode::new(&mut boxes1.objects, 0, boxes1.objects.len(), 0.0, 1.0))));
-
-    let light = Rc::new(RefCell::new(material::DiffuseLight::new( Color(7.0, 7.0, 7.0))));
-    objects.add(Rc::new(RefCell::new(aarect::XZRect::new(123.0, 423.0, 147.0, 412.0, 554.0, light.clone()))));
-
-    let center1 = Point3(400.0, 400.0, 200.0);
-    let center2 = center1 + Vec3(30.0, 0.0, 0.0);
-    let moving_sphere_material = Rc::new(RefCell::new(Lambertian::new( &Color(1.14, 0.64, 1.20))));
-    // objects.add(Rc::new(RefCell::new( MovingSphere { center0: center1,
-    //     center1: center2,
-    //     time0: 0.0,
-    //     time1: 1.0,
-    //     radius: 50.0,
-    //     mat_ptr: moving_sphere_material,
-    // })));
-    // objects.add(Rc::new(RefCell::new(
-    //     Sphere {
-    //         center: Point3(260.0, 150.0, 45.0),
-    //         radius: 50.0,
-    //         mat_ptr: Rc::new(RefCell::new(Dialectric {ir: 1.5})),
-    //     }
-    // )));
-
-    // objects.add(Rc::new(RefCell::new(
-    //     Sphere {
-    //         center: Point3(0.0, 150.0, 145.0), 
-    //         radius: 50.0, 
-    //         mat_ptr: Rc::new(RefCell::new(Metal { albedo: Color(0.8, 0.8, 0.9), fuzz: 1.0 }))
-    //     }
-    // )));
-
-    let mut boundary = Rc::new(RefCell::new(
-        Sphere { 
-            center: Point3(360.0, 150.0, 145.0), 
-            radius: 70.0, 
-            mat_ptr: Rc::new(RefCell::new(Dialectric {ir: 1.5}))
-    }));
-    // objects.add(boundary.clone());
-    // objects.add(Rc::new(RefCell::new(ConstantMedium::new(boundary.clone(), 0.2, Color(0.2, 0.4, 0.9)))));
-    boundary = Rc::new(RefCell::new(
-        Sphere {
-            center: Point3(0.0, 0.0, 0.0), 
-            radius: 5000.0, 
-            mat_ptr: Rc::new(RefCell::new(Dialectric {ir: 1.5}))
-        } 
-    ));
-    // objects.add(Rc::new(RefCell::new(ConstantMedium::new(boundary.clone(), 0.0001, Color(1.0, 1.0, 1.0)))));
-
-    let emat = Rc::new(RefCell::new(texture::ImageTexture::new(String::from("pluto.jpg"))));
-    // objects.add(Rc::new(RefCell::new(
-    //     Sphere {
-    //         center: Point3(400.0, 200.0, 400.0), 
-    //         radius: 100.0, 
-    //         mat_ptr: Rc::new(RefCell::new(Lambertian { albedo: emat }))
-    //     }
-    // )));
-    let pertext = Rc::new(RefCell::new(texture::NoiseTexture { noise: Perlin::new(), scale: 0.1}));
-    // objects.add(Rc::new(RefCell::new(
-    //     Sphere {
-    //         center: Point3(220.0, 280.0, 300.0), 
-    //         radius: 80.0, 
-    //         mat_ptr: Rc::new(RefCell::new(Lambertian { albedo: pertext }))
-    //     }
-    // )));
-
-    let mut boxes2: HittableList = HittableList {objects: Vec::new() };
-    let white = Rc::new(RefCell::new(Lambertian::new( &Color(0.73, 0.73, 0.73))));
-    let ns = 25;
-    for _j in 0..ns {
-        boxes2.add(Rc::new(RefCell::new(
-            Sphere {
-                center: Point3::random_range(200.0, 400.0), 
-                radius: 10.0, 
-                mat_ptr:  white.clone()
-            }
-        )));
-    }
-
-    // objects.add(Rc::new(RefCell::new(
-    //             bvh_node::BvhNode::new(&boxes2.objects, 0, boxes2.objects.len(), 0.0, 1.0))
-    //         )
-    // );
 
     return objects;
 }
@@ -690,32 +577,16 @@ fn main() {
         for j in (0..image_height).rev() {
             eprintln!("Scanlines remaining: {}", j);
             for i in 0..image_width {
-                let now = Instant::now();
                 let mut pixel_color: Color = Color(0.0, 0.0, 0.0);
-                let mut rand_t: u128 = 0;
-                let mut rand_ray: u128 = 0;
-                let mut rand_pixel: u128 = 0;
                 for _k in 0..samples_per_pixel {
-                    let now_r = Instant::now();
                     let u: f64 = (i as f64 + fastrand::f64()) / (image_width - 1) as f64;
                     let v: f64 = (j as f64 + fastrand::f64()) / (image_height - 1) as f64;
-                    rand_t += now_r.elapsed().as_nanos();
-                    let now_ray = Instant::now();
                     let r: Ray = cam.get_ray(u, v);
-                    rand_ray += now_ray.elapsed().as_nanos();
-                    let now_pixel = Instant::now();
                     pixel_color += ray_color(&r, &background, &mut world, MAX_DEPTH, &mtr);
-                    rand_pixel += now_pixel.elapsed().as_nanos();
                 }
                 write_color(pixel_color, samples_per_pixel);
-                // eprintln!("Line:{}, Pixel:{}, Time elapsed: {}", j, i, now.elapsed().as_nanos());
-                // eprintln!("Line:{}, Pixel:{}, Time elapsed for rand: {}", j, i, rand_t / samples_per_pixel as u128);
-                // eprintln!("Line:{}, Pixel:{}, Time elapsed for ray: {}", j, i, rand_ray / samples_per_pixel as u128);
-                // eprintln!("Line:{}, Pixel:{}, Time elapsed for pixel color: {}", j, i, rand_pixel / samples_per_pixel as u128);
-
             }
         }
-    
     eprintln!("Done. ");
 }
 
