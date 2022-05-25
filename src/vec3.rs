@@ -12,8 +12,9 @@ use std::fmt;
 
 use rand::Rng;
 use rand::distributions::Uniform;
-pub const PI: f64 = 3.1415926535897932385;
 
+use rtweekend::random_double;
+use rtweekend::random_double_range;
 
 #[derive(Copy, Clone)]
 pub struct Vec3(pub f64, pub f64, pub f64);
@@ -178,16 +179,6 @@ impl Div<f64> for Vec3 {
     }
 }
 
-pub fn random_double() -> f64 {
-    let a: f64 = rand::thread_rng().gen_range(0.0..1.0);
-    a
-}
-
-pub fn random_double_range(min: f64, max: f64) -> f64 {
-    let a: f64 = rand::thread_rng().gen_range(0.0..1.0);
-    min + (max - min)*a
-}
-
 // Initially the plan was to rely on methods in Vec3 but rand is slow. Sampling from a uniform is faster
 pub fn random_in_unit_sphere() -> Vec3 {
     let random_space = Uniform::new(-1.0f64, 1.0f64);
@@ -234,8 +225,4 @@ pub fn refract(uv: &Vec3, n: &Vec3, etai_over_etat: f64) -> Vec3 {
     let r_out_perp: Vec3 =  etai_over_etat * (*uv + cos_theta * *n);
     let r_out_parallel: Vec3 = -(1.0 - r_out_perp.length_square().abs()).sqrt() * *n;
     r_out_perp + r_out_parallel
-}
-
-pub fn degrees_to_radians(degrees: f64) -> f64 {
-    (degrees*PI)/180.0
 }

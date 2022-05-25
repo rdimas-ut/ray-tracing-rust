@@ -2,7 +2,6 @@ mod vec3;
 use vec3::Vec3;
 use vec3::Point3;
 use vec3::Color;
-use vec3::random_double_range;
 
 mod camera;
 use camera::Camera;
@@ -32,6 +31,8 @@ use moving_sphere::MovingSphere;
 
 mod rtweekend;
 use rtweekend::random_double;
+use rtweekend::random_double_range;
+use rtweekend::clamp;
 
 mod aabb;
 
@@ -56,18 +57,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::sync::Arc;
 
-// use rand::Rng;
-use rand::distributions::Uniform;
-
-use fastrand;
-
 use std::time::Instant;
-
-fn clamp(x: f64, min: f64, max: f64) -> f64 {
-    if x < min { return min };
-    if x > max { return max };
-    return x;
-}
 
 #[allow(dead_code)]
 fn hit_sphere(center: Point3, radius: f64, r: Ray) -> f64 {
@@ -133,18 +123,16 @@ fn write_color(pixel_color: Color, samples_per_pixel: u64) {
         (256.0 * clamp(b, 0.0, 0.999)) as u64)
 }
 
-fn random_scene(zero_to_one: rand::distributions::Uniform<f64>) -> HittableList {
+fn random_scene() -> HittableList {
     let mut world: HittableList = HittableList { objects: Vec::new() };
-    let zero_to_five_tenths_dist = Uniform::new(0.0f64, 0.5f64);
-    let five_tenths_to_one_dist = Uniform::new(0.5f64, 1.0f64);
 
     let ground_material = Rc::new(RefCell::new(Lambertian::new(&Color(0.5, 0.5, 0.5))));
     world.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, -1000.0, 0.0), radius: 1000.0, mat_ptr: ground_material })));
 
     for a in -11..11 {
         for b in -11..11 {
-            let choose_mat: f64 = random_double(zero_to_one);
-            let center: Point3 = Point3(a as f64 + 0.9*random_double(zero_to_one), 0.2, b as f64 + 0.9*random_double(zero_to_one));
+            let choose_mat: f64 = random_double();
+            let center: Point3 = Point3(a as f64 + 0.9*random_double(), 0.2, b as f64 + 0.9*random_double());
 
             if (center - Point3(4.0, 0.2, 0.0)).length() > 0.9 {
                 let _sphere_material = Rc::new(RefCell::new(Lambertian::new(&Color(0.8, 0.8, 0.0))));
@@ -157,7 +145,7 @@ fn random_scene(zero_to_one: rand::distributions::Uniform<f64>) -> HittableList 
                 } else if choose_mat < 0.95 {
                     // metal
                     let albedo = Color::random_range(0.5, 1.0);
-                    let fuzz = random_double(zero_to_five_tenths_dist);
+                    let fuzz = random_double_range(0.0, 0.5);
                     let sphere_material = Rc::new(RefCell::new(Metal{ albedo: albedo, fuzz: fuzz }));
                     world.add(Rc::new(RefCell::new(Sphere { center: center, radius: 0.2, mat_ptr: sphere_material })));
                 } else {
@@ -182,10 +170,8 @@ fn random_scene(zero_to_one: rand::distributions::Uniform<f64>) -> HittableList 
     return world;
 }
 
-fn random_scene_book2(zero_to_one: rand::distributions::Uniform<f64>) -> HittableList {
+fn random_scene_book2() -> HittableList {
     let mut world: HittableList = HittableList { objects: Vec::new() };
-    let zero_to_five_tenths_dist = Uniform::new(0.0f64, 0.5f64);
-    // let five_tenths_to_one_dist = Uniform::new(0.5f64, 1.0f64);
 
     let ground_material = Rc::new(RefCell::new(Lambertian::new(&Color(0.5, 0.5, 0.5))));
     world.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, -1000.0, 0.0), radius: 1000.0, mat_ptr: ground_material})));
@@ -194,8 +180,8 @@ fn random_scene_book2(zero_to_one: rand::distributions::Uniform<f64>) -> Hittabl
 
     for a in -11..11 {
         for b in -11..11 {
-            let choose_mat: f64 = random_double(zero_to_one);
-            let center: Point3 = Point3(a as f64 + 0.9*random_double(zero_to_one), 0.2, b as f64 + 0.9*random_double(zero_to_one));
+            let choose_mat: f64 = random_double();
+            let center: Point3 = Point3(a as f64 + 0.9*random_double(), 0.2, b as f64 + 0.9*random_double());
 
             if (center - Point3(4.0, 0.2, 0.0)).length() > 0.9 {
                 let sphere_material: Rc<RefCell<dyn Material>>;
@@ -204,12 +190,12 @@ fn random_scene_book2(zero_to_one: rand::distributions::Uniform<f64>) -> Hittabl
                     // diffuse
                     let albedo: Color = Color::random() * Color::random();
                     sphere_material = Rc::new(RefCell::new(Lambertian::new(&albedo)));
-                    let center2 = center + Vec3(0.0, random_double(zero_to_five_tenths_dist), 0.0);
+                    let center2 = center + Vec3(0.0, random_double_range(0.0, 0.5), 0.0);
                     world.add(Rc::new(RefCell::new(MovingSphere { center0: center, center1: center2, time0: 0.0, time1: 1.0, radius: 0.2, mat_ptr: sphere_material })));
                 } else if choose_mat < 0.95 {
                     // metal
                     let albedo = Color::random_range(0.5, 1.0);
-                    let fuzz = random_double(zero_to_five_tenths_dist);
+                    let fuzz = random_double_range(0.0, 0.5);
                     sphere_material = Rc::new(RefCell::new(Metal{ albedo: albedo, fuzz: fuzz }));
                     world.add(Rc::new(RefCell::new(Sphere { center: center, radius: 0.2, mat_ptr: sphere_material })));
                 } else {
@@ -257,10 +243,10 @@ fn two_perlin_spheres() -> HittableList {
     return objects;
 }
 
-fn earth() -> HittableList {
-    let earth_texture = Rc::new(RefCell::new(texture::ImageTexture::new(String::from("pluto.jpg"))));
-    let earth_surface = Rc::new(RefCell::new(Lambertian{ albedo: earth_texture }));
-    let globe = Rc::new(RefCell::new(Sphere { center: Point3(0.0, 0.0, 0.0), radius: 2.0, mat_ptr: earth_surface}));
+fn pluto() -> HittableList {
+    let pluto_texture = Rc::new(RefCell::new(texture::ImageTexture::new(String::from("pluto.jpg"))));
+    let pluto_surface = Rc::new(RefCell::new(Lambertian{ albedo: pluto_texture }));
+    let globe = Rc::new(RefCell::new(Sphere { center: Point3(0.0, 0.0, 0.0), radius: 2.0, mat_ptr: pluto_surface}));
 
     let mut objects = HittableList {objects: Vec::new() };
     objects.add(globe);
@@ -457,9 +443,6 @@ fn final_scene() -> HittableList {
 }
 
 fn main() {
-        // RNG
-        let zero_to_one = Uniform::new(0.0f64, 1.0f64);
-        let mut rng  = rand::thread_rng();
 
         // Image
         let mut aspect_ratio: f64 = 16.0/9.0;
@@ -468,7 +451,6 @@ fn main() {
         const MAX_DEPTH: u64 = 50;
     
         // World
-        // let mut world = random_scene(zero_to_one);
         let mut world: HittableList;
 
         let lookfrom: Point3;
@@ -481,7 +463,7 @@ fn main() {
 
         match case {
             1 => {
-                world = random_scene(zero_to_one);
+                world = random_scene();
                 background = Color(0.70, 0.80, 1.00);
                 lookfrom = Point3(13.0, 2.0, 3.0);
                 lookat = Point3(0.0, 0.0, 0.0);
@@ -503,7 +485,7 @@ fn main() {
                 vfov= 20.0;
             },
             4 => {
-                world = earth();
+                world = pluto();
                 background = Color(0.70, 0.80, 1.00);
                 lookfrom = Point3(13.0, 2.0, 3.0);
                 lookat = Point3(0.0, 0.0, 0.0);
@@ -579,8 +561,8 @@ fn main() {
             for i in 0..image_width {
                 let mut pixel_color: Color = Color(0.0, 0.0, 0.0);
                 for _k in 0..samples_per_pixel {
-                    let u: f64 = (i as f64 + fastrand::f64()) / (image_width - 1) as f64;
-                    let v: f64 = (j as f64 + fastrand::f64()) / (image_height - 1) as f64;
+                    let u: f64 = (i as f64 + random_double()) / (image_width - 1) as f64;
+                    let v: f64 = (j as f64 + random_double()) / (image_height - 1) as f64;
                     let r: Ray = cam.get_ray(u, v);
                     pixel_color += ray_color(&r, &background, &mut world, MAX_DEPTH, &mtr);
                 }

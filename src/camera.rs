@@ -1,10 +1,10 @@
 use crate::vec3::Vec3;
 use crate::vec3::Point3;
-use crate::vec3::degrees_to_radians;
 use crate::vec3::random_in_unit_disk;
 use crate::ray::Ray;
 
-use crate::rtweekend::random_double;
+use crate::rtweekend::random_double_range;
+use crate::rtweekend::degrees_to_radians;
 
 use rand::distributions::Uniform;
 
@@ -26,12 +26,11 @@ impl Camera {
     pub fn get_ray(&self, s: f64, t: f64) -> Ray {
         let rd: Vec3 = self.lens_radius * random_in_unit_disk();
         let offset: Vec3 = self.u*rd.x() + self.v*rd.y();
-        let random_dist = Uniform::new(self.time0, self.time1);
 
         Ray {
             origin: self.origin + offset,
             direction: self.lower_left_corner + (s*self.horizontal) + (t*self.vertical) - self.origin - offset,
-            tm: random_double(random_dist)
+            tm: random_double_range(self.time0, self.time1)
         }
     }
 

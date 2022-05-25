@@ -1,7 +1,6 @@
 use crate::vec3::Vec3;
 use crate::vec3::Color;
 use crate::vec3::Point3;
-use crate::vec3::random_double;
 
 use crate::ray::Ray;
 use crate::hittable::HitRecord;
@@ -12,6 +11,8 @@ use crate::material::DefaultMaterial;
 use crate::material::Isotropic;
 
 use crate::aabb::AABB;
+
+use rtweekend::random_double;
 
 use std::rc::Rc;
 use std::cell::RefCell;
