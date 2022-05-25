@@ -1,7 +1,6 @@
 use crate::vec3::Vec3;
 use crate::vec3::Color;
 use crate::vec3::Point3;
-use crate::vec3::random_double_range;
 use crate::vec3::random_unit_vector;
 use crate::vec3::random_in_unit_sphere;
 use crate::vec3::refract;
@@ -11,6 +10,8 @@ use crate::hittable::HitRecord;
 
 use crate::texture::Texture;
 use crate::texture::SolidColor;
+
+use rtweekend::random_double;
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -99,7 +100,7 @@ impl Material for Dialectric {
         let cannot_refract: bool = refraction_ratio * sin_theta > 1.0;
         let direction: Vec3;
 
-        if cannot_refract || Dialectric::reflectance(cos_theta, refraction_ratio) > random_double_range(0.0, 1.0) {
+        if cannot_refract || Dialectric::reflectance(cos_theta, refraction_ratio) > random_double() {
             direction = reflect(&unit_direction, &rec.normal);
         } else {
             direction = refract(&unit_direction, &rec.normal, refraction_ratio)
