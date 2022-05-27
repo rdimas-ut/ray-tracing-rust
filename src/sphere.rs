@@ -1,9 +1,9 @@
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::f64::consts::PI;
 
 use crate::vec3::Vec3;
 use crate::vec3::Point3;
-use crate::vec3::PI;
 
 use crate::hittable::Hittable;
 use crate::hittable::HitRecord;

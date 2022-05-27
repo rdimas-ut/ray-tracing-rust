@@ -12,7 +12,7 @@ use crate::material::Isotropic;
 
 use crate::aabb::AABB;
 
-use rtweekend::random_double;
+use crate::rtweekend::random_double;
 
 use std::rc::Rc;
 use std::cell::RefCell;

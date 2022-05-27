@@ -13,8 +13,8 @@ use std::fmt;
 use rand::Rng;
 use rand::distributions::Uniform;
 
-use rtweekend::random_double;
-use rtweekend::random_double_range;
+use crate::rtweekend::random_double;
+use crate::rtweekend::random_double_range;
 
 #[derive(Copy, Clone)]
 pub struct Vec3(pub f64, pub f64, pub f64);
