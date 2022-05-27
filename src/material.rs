@@ -11,7 +11,7 @@ use crate::hittable::HitRecord;
 use crate::texture::Texture;
 use crate::texture::SolidColor;
 
-use rtweekend::random_double;
+use crate::rtweekend::random_double;
 
 use std::rc::Rc;
 use std::cell::RefCell;

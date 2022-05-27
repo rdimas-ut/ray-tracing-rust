@@ -6,8 +6,6 @@ use crate::ray::Ray;
 use crate::rtweekend::random_double_range;
 use crate::rtweekend::degrees_to_radians;
 
-use rand::distributions::Uniform;
-
 #[derive(Copy, Clone)]
 pub struct Camera {
     pub origin: Point3,
