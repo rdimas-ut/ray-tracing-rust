@@ -1,14 +1,33 @@
 [package]
 name = "ray-tracing-rust"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
+default-run = "main"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "main"
+path = "src/main.rs"
+
+[[bin]]
+name = "inOneWeekend"
+test = false
+bench = false
+
+[[bin]]
+name = "theNextWeek"
+test = false
+bench = false
+
+[[bin]]
+name = "theRestOfYourLife"
+test = false
+bench = false
+
 [dependencies]
-rand = "0.8.4"
-image = "0.23.14"
-fastrand = "1.5.0"
+rand = "0.8.5"
+image = "0.24.2"
 
 [profile.dev]
 opt-level = 3
