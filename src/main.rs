@@ -1,55 +1,45 @@
-mod vec3;
-use vec3::Vec3;
-use vec3::Point3;
-use vec3::Color;
 
-mod camera;
-use camera::Camera;
+use ray_tracing_rust::vec3::Vec3;
+use ray_tracing_rust::vec3::Point3;
+use ray_tracing_rust::vec3::Color;
 
-mod ray;
-use ray::Ray;
+use ray_tracing_rust::camera::Camera;
 
-mod hittable;
-use hittable::HitRecord;
-use hittable::Hittable;
+use ray_tracing_rust::ray::Ray;
 
-mod material;
-use material::DefaultMaterial;
-use material::Lambertian;
-use material::Metal;
-use material::Dialectric;
-use material::Material;
+use ray_tracing_rust::hittable;
+use ray_tracing_rust::hittable::HitRecord;
+use ray_tracing_rust::hittable::Hittable;
 
-mod hittable_list;
-use hittable_list::HittableList;
+use ray_tracing_rust::material;
+use ray_tracing_rust::material::DefaultMaterial;
+use ray_tracing_rust::material::Lambertian;
+use ray_tracing_rust::material::Metal;
+use ray_tracing_rust::material::Dialectric;
+use ray_tracing_rust::material::Material;
 
-mod sphere;
-use sphere::Sphere;
+use ray_tracing_rust::hittable_list::HittableList;
 
-mod moving_sphere;
-use moving_sphere::MovingSphere;
+use ray_tracing_rust::sphere::Sphere;
 
-mod rtweekend;
-use rtweekend::random_double;
-use rtweekend::random_double_range;
-use rtweekend::clamp;
+use ray_tracing_rust::moving_sphere::MovingSphere;
 
-mod aabb;
+use ray_tracing_rust::rtweekend::random_double;
+use ray_tracing_rust::rtweekend::random_double_range;
+use ray_tracing_rust::rtweekend::clamp;
 
-mod texture;
-use texture::CheckerTexture;
+use ray_tracing_rust::texture;
+use ray_tracing_rust::texture::CheckerTexture;
 
-mod perlin;
-use perlin::Perlin;
+use ray_tracing_rust::perlin::Perlin;
 
-mod aarect;
+use ray_tracing_rust::aarect;
 
-mod abox;
+use ray_tracing_rust::abox;
 
-mod constant_medium;
-use constant_medium::ConstantMedium;
+use ray_tracing_rust::constant_medium::ConstantMedium;
 
-mod bvh_node;
+use ray_tracing_rust::bvh_node;
 
 use std::vec::Vec;
 
