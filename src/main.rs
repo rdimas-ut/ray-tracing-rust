@@ -27,7 +27,6 @@ use ray_tracing_rust::moving_sphere::MovingSphere;
 
 use ray_tracing_rust::rtweekend::random_double;
 use ray_tracing_rust::rtweekend::random_double_range;
-use ray_tracing_rust::rtweekend::clamp;
 
 use ray_tracing_rust::texture;
 use ray_tracing_rust::texture::CheckerTexture;
@@ -47,27 +46,11 @@ use std::vec::Vec;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use std::time::Instant;
-
-#[allow(dead_code)]
-fn hit_sphere(center: Point3, radius: f64, r: Ray) -> f64 {
-    let oc: Vec3 = r.origin() - center;
-    let a: f64 = r.direction().length_square();
-    let half_b: f64 = Vec3::dot(oc, r.direction());
-    let c: f64 = oc.length_square() - radius*radius;
-    let discriminant: f64 = (half_b*half_b) - (a*c);
-    if discriminant < 0.0 {
-        return -1.0;
-    } else {
-        return (-half_b - discriminant.sqrt()) / a;
-    }
-}
-
-fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64, mtr: &Rc<RefCell<DefaultMaterial>>) -> Color {
+fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64) -> Color {
     let mut rec: HitRecord = HitRecord {
         p: Point3(0.0, 0.0, 0.0),
         normal: Vec3(0.0, 0.0, 0.0),
-        mat_ptr: mtr.clone(),
+        mat_ptr: Rc::new(RefCell::new(DefaultMaterial)),
         t: 0.0,
         u: 0.0,
         v: 0.0,
@@ -79,7 +62,6 @@ fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64, 
         return Color(0.0, 0.0, 0.0);
     }
 
-    let now_hit = Instant::now();
     if !world.hit(r, 0.001, f64::INFINITY, &mut rec) {
         return *background;    
     }
@@ -92,63 +74,14 @@ fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64, 
         return emitted;
     }
 
-    return emitted + attenuation * ray_color(&scattered, background, world, depth-1, mtr);
+    return emitted + attenuation * ray_color(&scattered, background, world, depth-1);
 }
 
 fn random_scene() -> HittableList {
     let mut world: HittableList = HittableList { objects: Vec::new() };
 
-    let ground_material = Rc::new(RefCell::new(Lambertian::new(&Color(0.5, 0.5, 0.5))));
-    world.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, -1000.0, 0.0), radius: 1000.0, mat_ptr: ground_material })));
-
-    for a in -11..11 {
-        for b in -11..11 {
-            let choose_mat: f64 = random_double();
-            let center: Point3 = Point3(a as f64 + 0.9*random_double(), 0.2, b as f64 + 0.9*random_double());
-
-            if (center - Point3(4.0, 0.2, 0.0)).length() > 0.9 {
-                let _sphere_material = Rc::new(RefCell::new(Lambertian::new(&Color(0.8, 0.8, 0.0))));
-
-                if choose_mat < 0.8 {
-                    // diffuse
-                    let albedo: Color = Color::random() * Color::random();
-                    let sphere_material = Rc::new(RefCell::new(Lambertian::new(&albedo)));
-                    world.add(Rc::new(RefCell::new(Sphere { center: center, radius: 0.2, mat_ptr: sphere_material })));
-                } else if choose_mat < 0.95 {
-                    // metal
-                    let albedo = Color::random_range(0.5, 1.0);
-                    let fuzz = random_double_range(0.0, 0.5);
-                    let sphere_material = Rc::new(RefCell::new(Metal{ albedo: albedo, fuzz: fuzz }));
-                    world.add(Rc::new(RefCell::new(Sphere { center: center, radius: 0.2, mat_ptr: sphere_material })));
-                } else {
-                    // glass
-                    let sphere_material = Rc::new(RefCell::new(Dialectric{ ir: 1.5 }));
-                    world.add(Rc::new(RefCell::new(Sphere { center: center, radius: 0.2, mat_ptr: sphere_material })));
-                }
-            }
-        }
-    }
-
-    
-    let material1 = Rc::new(RefCell::new(Dialectric{ ir: 1.5 }));
-    world.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, 1.0, 0.0), radius: 1.0, mat_ptr: material1 })));
-
-    let material2 = Rc::new(RefCell::new(Lambertian::new(&Color(0.4, 0.2, 0.1))));
-    world.add(Rc::new(RefCell::new(Sphere { center: Point3(-4.0, 1.0, 0.0), radius: 1.0, mat_ptr: material2 })));
-
-    let material3 = Rc::new(RefCell::new(Metal{ albedo: Color(0.7, 0.6, 0.5), fuzz: 0.0 }));
-    world.add(Rc::new(RefCell::new(Sphere { center: Point3(4.0, 1.0, 0.0), radius: 1.0, mat_ptr: material3 })));
-
-    return world;
-}
-
-fn random_scene_book2() -> HittableList {
-    let mut world: HittableList = HittableList { objects: Vec::new() };
-
-    let ground_material = Rc::new(RefCell::new(Lambertian::new(&Color(0.5, 0.5, 0.5))));
-    world.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, -1000.0, 0.0), radius: 1000.0, mat_ptr: ground_material})));
-    // let checker = Rc::new(RefCell::new(CheckerTexture::new(Color(0.2, 0.3, 0.1),Color(0.9, 0.9, 0.9))));
-    // world.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, -1000.0, 0.0), radius: 1000.0, mat_ptr: Rc::new(RefCell::new(Lambertian{ albedo: checker })) })));
+    let checker = Rc::new(RefCell::new(CheckerTexture::new(Color(0.2, 0.3, 0.1),Color(0.9, 0.9, 0.9))));
+    world.add(Rc::new(RefCell::new(Sphere { center: Point3(0.0, -1000.0, 0.0), radius: 1000.0, mat_ptr: Rc::new(RefCell::new(Lambertian{ albedo: checker })) })));
 
     for a in -11..11 {
         for b in -11..11 {
@@ -312,13 +245,6 @@ fn final_scene() -> HittableList {
             let z1 = z0 + w;
 
             boxes1.add(Rc::new(RefCell::new(abox::ABox::new(&Point3(x0,y0,z0), &Point3(x1,y1,z1), ground.clone()))));
-            //boxes1.push(Box::new(abox::ABox::new(&Point3(x0,y0,z0), &Point3(x1,y1,z1), ground.clone())));
-
-            // boxes1.push(Block::new_hittable(
-            //     Vec3(x0, y0, z0),
-            //     Vec3(x1, y1, z1),
-            //     ground.clone(),
-            // ));
         }
     }
 
@@ -512,20 +438,12 @@ fn main() {
             }
         }
 
-        let image_height: u64 = (image_width as f64/aspect_ratio) as u64;
-
         // Camera
-        // let lookfrom: Point3 = Point3(13.0, 2.0, 3.0);
-        // let lookat: Point3 = Point3(0.0, 0.0, 0.0);
-        // let vup: Vec3 = Vec3(0.0, 1.0, 0.0);
-        // let dist_to_focus: f64 = 10.0;
-        // let aperture: f64 = 0.1;
         let vup = Vec3(0.0, 1.0, 0.0);
         let dist_to_focus: f64 = 10.0;
+        let image_height: u64 = (image_width as f64/aspect_ratio) as u64;
 
-        // let cam: Camera = Camera::new(lookfrom, lookat, vup, 20.0, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0); 
         let cam: Camera = Camera::new(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0); 
-        let mtr = Rc::new(RefCell::new(DefaultMaterial));
         // Render
         print!("P3\n{} {}\n255\n", image_width, image_height);
         for j in (0..image_height).rev() {
@@ -536,7 +454,7 @@ fn main() {
                     let u: f64 = (i as f64 + random_double()) / (image_width - 1) as f64;
                     let v: f64 = (j as f64 + random_double()) / (image_height - 1) as f64;
                     let r: Ray = cam.get_ray(u, v);
-                    pixel_color += ray_color(&r, &background, &mut world, MAX_DEPTH, &mtr);
+                    pixel_color += ray_color(&r, &background, &mut world, MAX_DEPTH);
                 }
                 write_color(pixel_color, samples_per_pixel);
             }

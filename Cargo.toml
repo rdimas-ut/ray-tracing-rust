@@ -11,19 +11,19 @@ name = "main"
 path = "src/main.rs"
 
 [[bin]]
-name = "inOneWeekend"
+name = "in_one_weekend"
 path = "src/bin/in_one_weekend.rs"
 test = false
 bench = false
 
 [[bin]]
-name = "theNextWeek"
+name = "the_next_week"
 path = "src/bin/the_next_week.rs"
 test = false
 bench = false
 
 [[bin]]
-name = "theRestOfYourLife"
+name = "the_rest_of_your_life"
 path = "src/bin/the_rest_of_your_life.rs"
 test = false
 bench = false
