@@ -344,8 +344,8 @@ fn main() {
 
         // Image
         let mut aspect_ratio: f64 = 16.0/9.0;
-        let mut image_width: u64 = 600;
-        let mut samples_per_pixel: u64 = 10;
+        let mut image_width: u64 = 400;
+        let mut samples_per_pixel: u64 = 100;
         const MAX_DEPTH: u64 = 50;
     
         // World
@@ -357,7 +357,7 @@ fn main() {
         let mut aperture: f64 = 0.0;
         let mut background: Color = Color(0.0, 0.0, 0.0);
 
-        let case: u32 = 8;
+        let case: u32 = 1;
 
         match case {
             1 => {
@@ -419,8 +419,8 @@ fn main() {
             8 => {
                 world = final_scene();
                 aspect_ratio = 1.0;
-                image_width = 400;
-                samples_per_pixel = 10;
+                image_width = 800;
+                samples_per_pixel = 10000;
                 background = Color(0.0, 0.0, 0.0);
                 lookfrom = Point3(478.0, 278.0, -600.0);
                 lookat = Point3(278.0, 278.0, 0.0);
