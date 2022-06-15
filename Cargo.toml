@@ -12,16 +12,19 @@ path = "src/main.rs"
 
 [[bin]]
 name = "inOneWeekend"
+path = "src/bin/in_one_weekend.rs"
 test = false
 bench = false
 
 [[bin]]
 name = "theNextWeek"
+path = "src/bin/the_next_week.rs"
 test = false
 bench = false
 
 [[bin]]
 name = "theRestOfYourLife"
+path = "src/bin/the_rest_of_your_life.rs"
 test = false
 bench = false
 

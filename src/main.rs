@@ -1,7 +1,8 @@
-
 use ray_tracing_rust::vec3::Vec3;
 use ray_tracing_rust::vec3::Point3;
 use ray_tracing_rust::vec3::Color;
+
+use ray_tracing_rust::color::write_color;
 
 use ray_tracing_rust::camera::Camera;
 
@@ -92,24 +93,6 @@ fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64, 
     }
 
     return emitted + attenuation * ray_color(&scattered, background, world, depth-1, mtr);
-}
-
-fn write_color(pixel_color: Color, samples_per_pixel: u64) {
-    let mut r: f64 = pixel_color.x();
-    let mut g: f64 = pixel_color.y();
-    let mut b: f64 = pixel_color.z();
-
-    // Divide the color by the number of samples
-    let scale: f64 = 1.0/samples_per_pixel as f64;
-
-    r *= scale; r = r.sqrt();
-    g *= scale; g = g.sqrt();
-    b *= scale; b = b.sqrt();
-
-    println!("{} {} {}", 
-        (256.0 * clamp(r, 0.0, 0.999)) as u64, 
-        (256.0 * clamp(g, 0.0, 0.999)) as u64,
-        (256.0 * clamp(b, 0.0, 0.999)) as u64)
 }
 
 fn random_scene() -> HittableList {
