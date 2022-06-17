@@ -34,6 +34,12 @@ path = "src/bin/pi.rs"
 test = false
 bench = false
 
+[[bin]]
+name = "integrate_x_sq"
+path = "src/bin/integrate_x_sq.rs"
+test = false
+bench = false
+
 [dependencies]
 rand = "0.8.5"
 image = "0.24.2"
