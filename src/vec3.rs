@@ -9,6 +9,7 @@ use std::ops::Sub;
 use std::ops::Mul;
 use std::ops::Div;
 use std::fmt;
+use std::f64::consts::PI;
 
 use rand::Rng;
 use rand::distributions::Uniform;
@@ -225,4 +226,16 @@ pub fn refract(uv: &Vec3, n: &Vec3, etai_over_etat: f64) -> Vec3 {
     let r_out_perp: Vec3 =  etai_over_etat * (*uv + cos_theta * *n);
     let r_out_parallel: Vec3 = -(1.0 - r_out_perp.length_square().abs()).sqrt() * *n;
     r_out_perp + r_out_parallel
+}
+
+pub fn random_cosine_direction() -> Vec3{
+    let r1: f64 = random_double();
+    let r2: f64 = random_double();
+
+    let phi = 2.0*PI*r1;
+    let x = phi.cos()*r2.sqrt();
+    let y = phi.sin()*r2.sqrt();
+    let z = (1.0-r2).sqrt();
+
+    Vec3(x, y, z)
 }

@@ -1,6 +1,7 @@
 use crate::vec3::Vec3;
 use crate::vec3::Color;
 use crate::vec3::Point3;
+use crate::vec3::random_in_hemisphere;
 use crate::vec3::random_unit_vector;
 use crate::vec3::random_in_unit_sphere;
 use crate::vec3::refract;
@@ -13,12 +14,22 @@ use crate::texture::SolidColor;
 
 use crate::rtweekend::random_double;
 
+use std::f64::consts::PI;
 use std::rc::Rc;
 use std::cell::RefCell;
 
 pub trait Material {
-    fn scatter(&self, r_in: &Ray, rec: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) -> bool;
-    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color;
+    fn scatter(&self, _r_in: &Ray, _rec: &HitRecord, _attenuation: &mut Color, _scattered: &mut Ray) -> bool {
+        false
+    }
+
+    fn scattering_pdf(&self, _r_in: &Ray, _rec: &HitRecord, _scattered: &mut Ray) -> f64 {
+        0.0
+    }
+
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
+        Color(0.0, 0.0, 0.0)
+    }
 }
 
 pub struct Lambertian {
@@ -26,20 +37,20 @@ pub struct Lambertian {
 }
 
 impl Material for Lambertian {
-    fn scatter(&self, _r_in: &Ray, rec: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) -> bool {
-        let mut scatter_direction: Vec3 = rec.normal + random_unit_vector();
+    fn scatter(&self, r_in: &Ray, rec: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) -> bool {
+        let mut scatter_direction: Vec3 = random_in_hemisphere(rec.normal);
 
         if scatter_direction.near_zero() {
             scatter_direction = rec.normal;
         }
 
-        *scattered = Ray { origin: rec.p, direction: scatter_direction, tm: _r_in.time()};
+        *scattered = Ray { origin: rec.p, direction: Vec3::unit_vector(scatter_direction), tm: r_in.time()};
         *attenuation = self.albedo.borrow().value(rec.u, rec.v, &rec.p);
         true
     }
 
-    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
-        Color(0.0, 0.0, 0.0)
+    fn scattering_pdf(&self, _r_in: &Ray, rec: &HitRecord, scattered: &mut Ray) -> f64 {
+        1.0/(2.0*PI)
     }
 }
 
@@ -128,10 +139,6 @@ pub struct DiffuseLight {
 }
 
 impl Material for DiffuseLight {
-    fn scatter(&self, _r_in: &Ray, _rec: &HitRecord, _attenuation: &mut Color, _scattered: &mut Ray) -> bool {
-        false
-    }
-
     fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color {
         self.emit.borrow().value(u, v, p)
     }
