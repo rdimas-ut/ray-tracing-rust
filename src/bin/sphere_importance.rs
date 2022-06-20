@@ -1,7 +1,7 @@
-use ray_tracing_rust::{rtweekend::random_double_range, vec3::{Vec3, random_unit_vector}};
+use ray_tracing_rust::vec3::{Vec3, random_unit_vector};
 use std::f64::consts::PI;
 
-fn pdf(p: &Vec3) -> f64{
+fn pdf(_p: &Vec3) -> f64{
     1.0/(4.0*PI)
 }
 
