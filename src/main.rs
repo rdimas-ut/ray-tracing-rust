@@ -1,4 +1,5 @@
 use ray_tracing_rust::color;
+use ray_tracing_rust::rtweekend::random_double_range;
 use ray_tracing_rust::vec3::Vec3;
 use ray_tracing_rust::vec3::Point3;
 use ray_tracing_rust::vec3::Color;
@@ -53,14 +54,32 @@ fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64) 
 
     let mut scattered: Ray = Ray {origin: Point3(0.0, 0.0, 0.0), direction: Vec3(0.0, 0.0, 0.0), tm: 0.0};
     let mut attenuation: Color = Color(0.0, 0.0, 0.0);
-    let color_from_emission = rec.mat_ptr.borrow().emitted(rec.u, rec.v, &rec.p);
+    let mut pdf: f64 = 0.0;
+    let color_from_emission = rec.mat_ptr.borrow().emitted(r, &rec, rec.u, rec.v, &rec.p);
 
-    if !rec.mat_ptr.borrow().scatter(r, &rec, &mut attenuation, &mut scattered) {
+    if !rec.mat_ptr.borrow().scatter(r, &rec, &mut attenuation, &mut scattered, &mut pdf) {
         return color_from_emission;
     }
 
+    let on_light: Point3 = Point3(random_double_range(213.0, 343.0), 554.0, random_double_range(227.0, 332.0));
+    let mut to_light = on_light - rec.p;
+    let distance_squared = to_light.length_square();
+    to_light = Vec3::unit_vector(to_light);
+
+    if Vec3::dot(to_light, rec.normal) < 0.0 {
+        return color_from_emission;
+    }
+
+    let light_area: f64 = (343.0 - 213.0)*(332.0 - 227.0);
+    let light_cosine: f64 = to_light.y().abs();
+    if light_cosine < 0.000001 {
+        return color_from_emission;
+    }
+
+    pdf = distance_squared / (light_cosine * light_area);
+    scattered = Ray {origin: rec.p, direction: to_light, tm: r.time()};
+
     let scattering_pdf = rec.mat_ptr.borrow().scattering_pdf(r, &rec, &mut scattered);
-    let pdf: f64 = scattering_pdf;
 
     let color_from_scatter = (attenuation * scattering_pdf * ray_color(&scattered, background, world, depth-1)) / pdf;
 
@@ -101,7 +120,7 @@ fn main() {
         let aspect_ratio: f64 = 1.0/1.0;
         let image_width: u64 = 500;
         let image_height: u64 = (image_width as f64/aspect_ratio) as u64;
-        let samples_per_pixel: u64 = 100;
+        let samples_per_pixel: u64 = 10;
         const MAX_DEPTH: u64 = 50;
     
         // World
