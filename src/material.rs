@@ -1,9 +1,11 @@
 use crate::vec3::Vec3;
 use crate::vec3::Color;
 use crate::vec3::Point3;
-use crate::vec3::random_in_hemisphere;
-use crate::vec3::random_unit_vector;
+use crate::vec3::random_cosine_direction;
+// use crate::vec3::random_in_hemisphere;
+// use crate::vec3::random_unit_vector;
 use crate::vec3::random_in_unit_sphere;
+use crate::vec3::random_unit_vector;
 use crate::vec3::refract;
 
 use crate::ray::Ray;
@@ -14,12 +16,14 @@ use crate::texture::SolidColor;
 
 use crate::rtweekend::random_double;
 
+use crate::onb::Onb;
+
 use std::f64::consts::PI;
 use std::rc::Rc;
 use std::cell::RefCell;
 
 pub trait Material {
-    fn scatter(&self, _r_in: &Ray, _rec: &HitRecord, _attenuation: &mut Color, _scattered: &mut Ray) -> bool {
+    fn scatter(&self, _r_in: &Ray, _rec: &HitRecord, _alb: &mut Color, _scattered: &mut Ray, _pdf: &mut f64) -> bool {
         false
     }
 
@@ -27,7 +31,7 @@ pub trait Material {
         0.0
     }
 
-    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
+    fn emitted(&self, _r_in: &Ray, _rec: &HitRecord, _u: f64, _v: f64, _p: &Point3) -> Color {
         Color(0.0, 0.0, 0.0)
     }
 }
@@ -37,19 +41,22 @@ pub struct Lambertian {
 }
 
 impl Material for Lambertian {
-    fn scatter(&self, r_in: &Ray, rec: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) -> bool {
-        let mut scatter_direction: Vec3 = random_in_hemisphere(rec.normal);
+    fn scatter(&self, r_in: &Ray, rec: &HitRecord, alb: &mut Color, scattered: &mut Ray, pdf: &mut f64) -> bool {
+        let mut uvw: Onb = Onb(Vec3(0.0, 0.0, 0.0), Vec3(0.0, 0.0, 0.0), Vec3(0.0, 0.0, 0.0));
+        uvw.build_from_w(&rec.normal);
+        let mut scatter_direction: Vec3 = uvw.local_vec(&random_cosine_direction());
 
         if scatter_direction.near_zero() {
             scatter_direction = rec.normal;
         }
 
         *scattered = Ray { origin: rec.p, direction: Vec3::unit_vector(scatter_direction), tm: r_in.time()};
-        *attenuation = self.albedo.borrow().value(rec.u, rec.v, &rec.p);
+        *alb = self.albedo.borrow().value(rec.u, rec.v, &rec.p);
+        *pdf = Vec3::dot(uvw.w(), scattered.direction())/PI;
         true
     }
 
-    fn scattering_pdf(&self, _r_in: &Ray, rec: &HitRecord, scattered: &mut Ray) -> f64 {
+    fn scattering_pdf(&self, _r_in: &Ray, _rec: &HitRecord, _scattered: &mut Ray) -> f64 {
         1.0/(2.0*PI)
     }
 }
@@ -63,11 +70,11 @@ impl Lambertian {
 pub struct DefaultMaterial;
 
 impl Material for DefaultMaterial {
-    fn scatter(&self, _r_in: &Ray, _rec: &HitRecord, _attenuation: &mut Color, _scattered: &mut Ray) -> bool{
+    fn scatter(&self, _r_in: &Ray, _rec: &HitRecord, _alb: &mut Color, _scattered: &mut Ray, _pdf: &mut f64) -> bool{
         true
     }
 
-    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
+    fn emitted(&self, _r_in: &Ray, _rec: &HitRecord,  _u: f64, _v: f64, _p: &Point3) -> Color {
         Color(0.0, 0.0, 0.0)
     }
 }
@@ -78,16 +85,12 @@ pub struct Metal {
 }
 
 impl Material for Metal {
-    fn scatter(&self, r_in: &Ray, rec: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) -> bool {
+    fn scatter(&self, r_in: &Ray, rec: &HitRecord, alb: &mut Color, scattered: &mut Ray, _pdf: &mut f64) -> bool {
         let reflected = reflect(&Vec3::unit_vector(r_in.direction()), &rec.normal);
         *scattered = Ray {origin: rec.p, direction: reflected + self.fuzz*random_in_unit_sphere(), tm: r_in.time()};
-        *attenuation = self.albedo;
+        *alb = self.albedo;
 
         Vec3::dot(scattered.direction(), rec.normal) > 0.0
-    }
-
-    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
-        Color(0.0, 0.0, 0.0)
     }
 }
 
@@ -100,8 +103,8 @@ pub struct Dialectric {
 }
 
 impl Material for Dialectric {
-    fn scatter(&self, r_in: &Ray, rec: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) -> bool {
-        *attenuation = Color(1.0, 1.0, 1.0);
+    fn scatter(&self, r_in: &Ray, rec: &HitRecord, alb: &mut Color, scattered: &mut Ray, _pdf: &mut f64) -> bool {
+        *alb = Color(1.0, 1.0, 1.0);
         let refraction_ratio: f64 = if rec.front_face { 1.0 / self.ir} else { self.ir };
         
         let unit_direction: Vec3 = Vec3::unit_vector(r_in.direction());
@@ -120,10 +123,6 @@ impl Material for Dialectric {
         *scattered = Ray { origin: rec.p, direction: direction, tm: r_in.time()};
         true
     }
-
-    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
-        Color(0.0, 0.0, 0.0)
-    }
 }
 
 impl Dialectric {
@@ -139,8 +138,11 @@ pub struct DiffuseLight {
 }
 
 impl Material for DiffuseLight {
-    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color {
-        self.emit.borrow().value(u, v, p)
+    fn emitted(&self, _r_in: &Ray, rec: &HitRecord, u: f64, v: f64, p: &Point3) -> Color {
+        if rec.front_face {
+            return Color(0.0, 0.0, 0.0);
+        }
+        return self.emit.borrow().value(u, v, p);
     }
 }
 
@@ -153,22 +155,23 @@ impl DiffuseLight {
 }
 
 pub struct Isotropic {
-    albedo: Rc<RefCell<dyn Texture>>
+    albedo: Rc<RefCell<dyn Texture>>,
 }
 
 impl Material for Isotropic {
-    fn scatter(&self, r_in: &Ray, rec: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) -> bool {
+    fn scatter(&self, r_in: &Ray, rec: &HitRecord, alb: &mut Color, scattered: &mut Ray, pdf: &mut f64) -> bool {
         *scattered = Ray {
             origin: rec.p,
-            direction: random_in_unit_sphere(),
+            direction: random_unit_vector(),
             tm: r_in.time(), 
         };
-        *attenuation = self.albedo.borrow().value(rec.u, rec.v, &rec.p);
+        *alb = self.albedo.borrow().value(rec.u, rec.v, &rec.p);
+        *pdf = 1.0 / (4.0 * PI);
         return true;
     }
 
-    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
-        Color(0.0, 0.0, 0.0)
+    fn scattering_pdf(&self, _r_in: &Ray, _rec: &HitRecord, _scattered: &mut Ray) -> f64 {
+        1.0 * (4.0 * PI)
     }
 }
 
@@ -177,5 +180,9 @@ impl Isotropic {
         Isotropic {
             albedo: Rc::new(RefCell::new(SolidColor::new(c[0], c[1], c[2])))
         }
+    }
+
+    pub fn new_texture(a: Rc<RefCell<dyn Texture>>) -> Self {
+        Isotropic { albedo: a }
     }
 }
