@@ -5,7 +5,9 @@ use crate::aabb::AABB;
 use crate::ray::Ray;
 
 use crate::material::Material;
+use crate::material::DefaultMaterial;
 
+use crate::rtweekend::random_double_range;
 use crate::vec3::Vec3;
 use crate::vec3::Point3;
 
@@ -103,6 +105,7 @@ impl Hittable for XZRect {
         return true;
 
     }
+
     fn bounding_box(&self, _time0: f64, _time1: f64, output_box: &mut AABB) -> bool {
         // The bounding box must have non-zero width in each dimension, so the z
         // dimension is padded a small amount
@@ -112,6 +115,33 @@ impl Hittable for XZRect {
             maximum: Point3(self.x1, self.k + 0.0001, self.z1)
         };
         return true;
+    }
+
+    fn pdf_value(&mut self, o: &Vec3, v: &Vec3) -> f64 {
+        let mut rec: HitRecord = HitRecord {
+            p: Point3(0.0, 0.0, 0.0),
+            normal: Vec3(0.0, 0.0, 0.0),
+            mat_ptr: Rc::new(RefCell::new(DefaultMaterial)),
+            t: 0.0,
+            u: 0.0,
+            v: 0.0,
+            front_face: false,
+        };
+
+        if !self.hit(&Ray { origin: *o, direction: *v, tm: 0.0 }, 0.001, f64::INFINITY, &mut rec) {
+            return 0.0;
+        }
+
+        let area = (self.x1 - self.x0)*(self.z1 - self.z0);
+        let distance_squared = rec.t * rec.t * v.length_square();
+        let cosine = Vec3::dot(*v, rec.normal).abs() / v.length();
+
+        distance_squared / (cosine * area)
+    }
+
+    fn random(&self, o: &Vec3) -> Vec3 {
+       let random_point = Point3(random_double_range(self.x0, self.x1), self.k, random_double_range(self.z0, self.z1));
+       random_point - *o 
     }
 }
 

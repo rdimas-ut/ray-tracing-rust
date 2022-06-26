@@ -30,7 +30,16 @@ impl HitRecord {
 
 pub trait Hittable {
     fn hit(&mut self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool;
+
     fn bounding_box(&self, time0: f64, time1: f64, output_box: &mut AABB) -> bool;
+
+    fn pdf_value(&mut self, o: &Point3, v: &Vec3) -> f64 {
+        0.0
+    }
+
+    fn random(&self, o: &Vec3) -> Vec3 {
+        Vec3(1.0, 0.0, 0.0)
+    }
 }
 
 pub struct Translate {
