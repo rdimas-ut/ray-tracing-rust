@@ -26,6 +26,9 @@ use ray_tracing_rust::aarect;
 
 use ray_tracing_rust::abox;
 
+use ray_tracing_rust::pdf::Pdf;
+use ray_tracing_rust::pdf::CosinePdf;
+
 use std::f64::consts::PI;
 use std::vec::Vec;
 
@@ -61,27 +64,13 @@ fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64) 
         return color_from_emission;
     }
 
-    let on_light: Point3 = Point3(random_double_range(213.0, 343.0), 554.0, random_double_range(227.0, 332.0));
-    let mut to_light = on_light - rec.p;
-    let distance_squared = to_light.length_square();
-    to_light = Vec3::unit_vector(to_light);
+    let surface_pdf: CosinePdf = CosinePdf::new(&rec.normal);
+    scattered = Ray {origin: rec.p, direction: surface_pdf.generate(), tm: r.time()};
+    let pdf_val = surface_pdf.value(&scattered.direction());
 
-    if Vec3::dot(to_light, rec.normal) < 0.0 {
-        return color_from_emission;
-    }
+    let scattering_pdf: f64 = rec.mat_ptr.borrow().scattering_pdf(r, &rec, &mut scattered);
 
-    let light_area: f64 = (343.0 - 213.0)*(332.0 - 227.0);
-    let light_cosine: f64 = to_light.y().abs();
-    if light_cosine < 0.000001 {
-        return color_from_emission;
-    }
-
-    pdf = distance_squared / (light_cosine * light_area);
-    scattered = Ray {origin: rec.p, direction: to_light, tm: r.time()};
-
-    let scattering_pdf = rec.mat_ptr.borrow().scattering_pdf(r, &rec, &mut scattered);
-
-    let color_from_scatter = (attenuation * scattering_pdf * ray_color(&scattered, background, world, depth-1)) / pdf;
+    let color_from_scatter = (attenuation * scattering_pdf * ray_color(&scattered, background, world, depth-1)) / pdf_val;
 
     return color_from_emission + color_from_scatter;
 }
