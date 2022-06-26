@@ -57,7 +57,8 @@ impl Material for Lambertian {
     }
 
     fn scattering_pdf(&self, _r_in: &Ray, _rec: &HitRecord, _scattered: &mut Ray) -> f64 {
-        1.0/(2.0*PI)
+        let cos_theta = Vec3::dot(_rec.normal, Vec3::unit_vector(_scattered.direction()));
+        if cos_theta < 0.0 { 0.0 } else { cos_theta/PI }
     }
 }
 

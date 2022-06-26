@@ -1,4 +1,5 @@
 use ray_tracing_rust::color;
+use ray_tracing_rust::pdf::HittablePdf;
 use ray_tracing_rust::rtweekend::random_double_range;
 use ray_tracing_rust::vec3::Vec3;
 use ray_tracing_rust::vec3::Point3;
@@ -35,7 +36,7 @@ use std::vec::Vec;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64) -> Color {
+fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64, light_ptr: Rc<RefCell<dyn Hittable>>) -> Color {
     let mut rec: HitRecord = HitRecord {
         p: Point3(0.0, 0.0, 0.0),
         normal: Vec3(0.0, 0.0, 0.0),
@@ -64,13 +65,13 @@ fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64) 
         return color_from_emission;
     }
 
-    let surface_pdf: CosinePdf = CosinePdf::new(&rec.normal);
-    scattered = Ray {origin: rec.p, direction: surface_pdf.generate(), tm: r.time()};
-    let pdf_val = surface_pdf.value(&scattered.direction());
+    let mut light_pdf: HittablePdf = HittablePdf {objects: light_ptr.clone(), origin: rec.p};
+    scattered = Ray {origin: rec.p, direction: light_pdf.generate(), tm: r.time()};
+    let pdf_val = light_pdf.value(&scattered.direction());
 
     let scattering_pdf: f64 = rec.mat_ptr.borrow().scattering_pdf(r, &rec, &mut scattered);
 
-    let color_from_scatter = (attenuation * scattering_pdf * ray_color(&scattered, background, world, depth-1)) / pdf_val;
+    let color_from_scatter = (attenuation * scattering_pdf * ray_color(&scattered, background, world, depth-1, light_ptr)) / pdf_val;
 
     return color_from_emission + color_from_scatter;
 }
@@ -104,6 +105,9 @@ fn cornell_box() -> HittableList {
 }
 
 fn main() {
+        // Light Sources
+        let light_tex = Rc::new(RefCell::new(material::DiffuseLight::new( Color(15.0, 15.0, 15.0))));
+        let light = Rc::new(RefCell::new( aarect::XZRect::new(213.0, 343.0, 227.0, 332.0, 554.0, light_tex)));
 
         // Image
         let aspect_ratio: f64 = 1.0/1.0;
@@ -137,7 +141,7 @@ fn main() {
                     let u: f64 = (i as f64 + random_double()) / (image_width - 1) as f64;
                     let v: f64 = (j as f64 + random_double()) / (image_height - 1) as f64;
                     let r: Ray = cam.get_ray(u, v);
-                    pixel_color += ray_color(&r, &background, &mut world, MAX_DEPTH);
+                    pixel_color += ray_color(&r, &background, &mut world, MAX_DEPTH, light.clone());
                 }
                 write_color(pixel_color, samples_per_pixel);
             }
