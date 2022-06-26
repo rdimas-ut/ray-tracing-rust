@@ -18,7 +18,7 @@ impl Onb {
         self.2
     }
 
-    fn local(&self, a: f64, b: f64, c: f64) -> Vec3 {
+    pub fn local(&self, a: f64, b: f64, c: f64) -> Vec3 {
         a*self.u() + b*self.v() + c*self.w()
     }
 

@@ -11,9 +11,6 @@ use std::ops::Div;
 use std::fmt;
 use std::f64::consts::PI;
 
-use rand::Rng;
-use rand::distributions::Uniform;
-
 use crate::rtweekend::random_double;
 use crate::rtweekend::random_double_range;
 
@@ -182,12 +179,10 @@ impl Div<f64> for Vec3 {
 
 // Initially the plan was to rely on methods in Vec3 but rand is slow. Sampling from a uniform is faster
 pub fn random_in_unit_sphere() -> Vec3 {
-    let random_space = Uniform::new(-1.0f64, 1.0f64);
-    let mut rng  = rand::thread_rng();
-    let mut p: Vec3 = Vec3(rng.sample(random_space), rng.sample(random_space), rng.sample(random_space));
+    let mut p: Vec3 = Vec3::random_range(-1.0, 1.0);
     loop {
         if p.length_square() >= 1.0 {
-            p =  Vec3(rng.sample(random_space), rng.sample(random_space), rng.sample(random_space));
+            p = Vec3::random_range(-1.0, 1.0);
             continue
         }
         return p;
@@ -209,12 +204,10 @@ pub fn random_in_hemisphere(normal: Vec3) -> Vec3{
 }
 
 pub fn random_in_unit_disk() -> Vec3 {
-    let random_space = Uniform::new(-1.0f64, 1.0f64);
-    let mut rng  = rand::thread_rng();
-    let mut p: Vec3 = Vec3(rng.sample(random_space), rng.sample(random_space), 0.0);
+    let mut p: Vec3 = Vec3(random_double_range(-1.0, 1.0), random_double_range(-1.0, 1.0), 0.0);
     loop {
         if p.length_square() >= 1.0 {
-            p =  Vec3(rng.sample(random_space), rng.sample(random_space), 0.0);
+            p =  Vec3(random_double_range(-1.0, 1.0), random_double_range(-1.0, 1.0), 0.0);
             continue
         }
         return p;
