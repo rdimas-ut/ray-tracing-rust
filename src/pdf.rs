@@ -13,7 +13,7 @@ pub trait Pdf {
     fn generate(&self) -> Vec3;
 }
 
-struct SpherePdf();
+pub struct SpherePdf();
 
 impl Pdf for SpherePdf {
 

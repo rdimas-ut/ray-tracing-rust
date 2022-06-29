@@ -7,6 +7,11 @@ pub fn write_color(pixel_color: Color, samples_per_pixel: u64) {
     let mut g: f64 = pixel_color.y();
     let mut b: f64 = pixel_color.z();
 
+    // Replace NaN components with zero. See explanation in Ray Tracing: The Rest of Your Life.
+    if r != r { r = 0.0; }
+    if g != g { g = 0.0; }
+    if b != b { b = 0.0; }
+
     // Divide the color by the number of samples
     let scale: f64 = 1.0/samples_per_pixel as f64;
 
