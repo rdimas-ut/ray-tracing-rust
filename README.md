@@ -10,9 +10,16 @@ This also includes the code for the second book the series, [Ray Tracing: the Ne
 
 Final render for the second book is shown below.
 
-![Image 21](output/image_38.png)
+![Image 38](output/image_38.png)
+
+And now, it includes the code for the last book in the series, [_Ray Tracing: The Rest of Your Life_](https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html). Also, the final render of book 3 is below.
+
+![Image 38](output/image_50.png)
 
 ## Reference
 [_Ray Tracing in One Weekend_](https://raytracing.github.io/books/RayTracingInOneWeekend.html)
 
 [_Ray Tracing: the Next Week_](https://raytracing.github.io/books/RayTracingTheNextWeek.html)
+
+[_Ray Tracing: The Rest of Your Life_](https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html)
+
