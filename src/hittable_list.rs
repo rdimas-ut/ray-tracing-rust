@@ -1,6 +1,9 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 
+use rand::distributions::weighted;
+
+use crate::rtweekend::random_double_range;
 use crate::vec3::Vec3;
 use crate::vec3::Point3;
 
@@ -74,5 +77,20 @@ impl Hittable for HittableList {
         }
 
         true
+    }
+
+    fn pdf_value(&mut self, o: &Vec3, v: &Vec3) -> f64 {
+        let weight = 1.0 / self.objects.len() as f64;
+        let mut sum = 0.0;
+
+        for i in 0..self.objects.len() {
+            sum += weight * self.objects[i].borrow_mut().pdf_value(o, v);
+        }
+        sum
+    }
+
+    fn random(&self, o: &Vec3) -> Vec3 {
+        let int_size = self.objects.len();
+        self.objects[random_double_range(0.0, (int_size-1) as f64) as usize].borrow_mut().random(o)
     }
 }

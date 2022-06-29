@@ -2,6 +2,10 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::f64::consts::PI;
 
+use rand::random;
+
+use crate::onb::Onb;
+use crate::rtweekend::random_double;
 use crate::vec3::Vec3;
 use crate::vec3::Point3;
 
@@ -10,6 +14,7 @@ use crate::hittable::HitRecord;
 use crate::ray::Ray;
 
 use crate::material::Material;
+use crate::material::DefaultMaterial;
 
 use crate::aabb::AABB;
 
@@ -59,6 +64,35 @@ impl Hittable for Sphere {
         };
         true
     }
+
+    fn pdf_value(&mut self, o: &Vec3, v: &Vec3) -> f64 {
+        let mut rec: HitRecord = HitRecord {
+            p: Point3(0.0, 0.0, 0.0),
+            normal: Vec3(0.0, 0.0, 0.0),
+            mat_ptr: Rc::new(RefCell::new(DefaultMaterial)),
+            t: 0.0,
+            u: 0.0,
+            v: 0.0,
+            front_face: false,
+        };
+
+        if !self.hit(&Ray {origin: *o, direction: *v, tm: 0.0}, 0.001, f64::INFINITY, &mut rec) {
+            return 0.0;
+        }
+
+        let cos_theta_max = (1.0 - self.radius*self.radius/(self.center-*o).length_square()).sqrt();
+        let solid_angle = 2.0*PI*(1.0 - cos_theta_max);
+
+        return 1.0/solid_angle;
+    }
+
+    fn random(&self, o: &Vec3) -> Vec3 {
+        let direction: Vec3 = self.center - *o;
+        let distance_squared = direction.length_square();
+        let mut uvw: Onb = Onb(Vec3(0.0, 0.0, 0.0), Vec3(0.0, 0.0, 0.0), Vec3(0.0, 0.0, 0.0));
+        uvw.build_from_w(&direction);
+        uvw.local_vec(&Sphere::random_to_sphere(self.radius, distance_squared))
+    }
 }
 
 impl Sphere {
@@ -67,5 +101,17 @@ impl Sphere {
         let phi = (-p.z()).atan2(p.x()) + PI;
         *u = phi / (2.0*PI);
         *v = theta / PI;
+    }
+
+    fn random_to_sphere(radius: f64,  distance_squared: f64) -> Vec3 {
+        let r1 = random_double();
+        let r2 = random_double();
+        let z = 1.0 + r2*((1.0-radius*radius/distance_squared).sqrt() - 1.0);
+
+        let phi = 2.0*PI*r1;
+        let x = phi.cos()*(1.0-z*z).sqrt();
+        let y = phi.sin()*(1.0-z*z).sqrt();
+
+        return Vec3(x, y, z);
     }
 }
