@@ -1,8 +1,6 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use rand::distributions::weighted;
-
 use crate::rtweekend::random_double_range;
 use crate::vec3::Vec3;
 use crate::vec3::Point3;

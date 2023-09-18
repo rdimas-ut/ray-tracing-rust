@@ -2,13 +2,13 @@ use std::f64::consts::PI;
 
 use ray_tracing_rust::rtweekend::random_double;
 
-fn f(r1: f64, r2: f64) -> f64 {
+fn f(_r1: f64, r2: f64) -> f64 {
     let z: f64 = 1.0 - r2;
     let cos_theta: f64 = z;
     cos_theta*cos_theta*cos_theta
 }
 
-fn pdf(r1: f64, r2: f64) -> f64 {
+fn pdf(_r1: f64, _r2: f64) -> f64 {
     1.0 * (2.0*PI)
 }
 

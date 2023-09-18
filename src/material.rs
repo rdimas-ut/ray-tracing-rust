@@ -2,11 +2,7 @@ use crate::pdf::CosinePdf;
 use crate::vec3::Vec3;
 use crate::vec3::Color;
 use crate::vec3::Point3;
-use crate::vec3::random_cosine_direction;
-// use crate::vec3::random_in_hemisphere;
-// use crate::vec3::random_unit_vector;
 use crate::vec3::random_in_unit_sphere;
-use crate::vec3::random_unit_vector;
 use crate::vec3::refract;
 
 use crate::pdf::Pdf;
@@ -19,7 +15,6 @@ use crate::texture::SolidColor;
 
 use crate::rtweekend::random_double;
 
-use crate::onb::Onb;
 use crate::pdf::SpherePdf;
 
 use std::f64::consts::PI;
@@ -52,7 +47,7 @@ pub struct Lambertian {
 }
 
 impl Material for Lambertian {
-    fn scatter(&self, r_in: &Ray, rec: &HitRecord, srec: &mut ScatterRecord) -> bool {
+    fn scatter(&self, _r_in: &Ray, rec: &HitRecord, srec: &mut ScatterRecord) -> bool {
         srec.attenuation = self.albedo.borrow().value(rec.u, rec.v, &rec.p);
         srec.pdf_ptr = Rc::new(RefCell::new(CosinePdf::new(&rec.normal)));
         srec.skip_pdf = false;
@@ -166,7 +161,7 @@ pub struct Isotropic {
 }
 
 impl Material for Isotropic {
-    fn scatter(&self, r_in: &Ray, rec: &HitRecord, srec: &mut ScatterRecord) -> bool {
+    fn scatter(&self, _r_in: &Ray, rec: &HitRecord, srec: &mut ScatterRecord) -> bool {
         srec.attenuation = self.albedo.borrow().value(rec.u, rec.v, &rec.p);
         srec.pdf_ptr = Rc::new(RefCell::new(SpherePdf()));
         srec.skip_pdf = false;

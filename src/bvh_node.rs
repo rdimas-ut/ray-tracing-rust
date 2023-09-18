@@ -57,16 +57,13 @@ impl BvhNode {
         if object_span == 1 {
             left = Rc::clone(&objects[start]);
             right = Rc::clone(&objects[start]);
-            eprintln!("left: {}, right: {}", start, start);
         } else if object_span == 2 {
             if comparator(&objects[start], &objects[start+1]) == std::cmp::Ordering::Less {
                 left = Rc::clone(&objects[start]);
                 right = Rc::clone(&objects[start+1]);
-                eprintln!("left: {}, right: {}", start, start+1);
             } else {
                 left = Rc::clone(&objects[start+1]);
                 right = Rc::clone(&objects[start]);
-                eprintln!("left: {}, right: {}", start+1, start);
             }
         } else {
             objects[start..end].sort_unstable_by(comparator);
@@ -74,7 +71,6 @@ impl BvhNode {
             let mid: usize = start + (object_span/2);
             left = Rc::new(RefCell::new(BvhNode::new(&mut objects, start, mid, time0, time1)));
             right = Rc::new(RefCell::new(BvhNode::new(&mut objects, mid, end, time0, time1)));
-            eprintln!("left: {}, {} right: {}, {}", start, mid, mid, end);
         }
 
         let mut box_left: AABB = AABB {

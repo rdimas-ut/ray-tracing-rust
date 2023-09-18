@@ -33,11 +33,11 @@ pub trait Hittable {
 
     fn bounding_box(&self, time0: f64, time1: f64, output_box: &mut AABB) -> bool;
 
-    fn pdf_value(&mut self, o: &Point3, v: &Vec3) -> f64 {
+    fn pdf_value(&mut self, _o: &Point3, _v: &Vec3) -> f64 {
         0.0
     }
 
-    fn random(&self, o: &Vec3) -> Vec3 {
+    fn random(&self, _o: &Vec3) -> Vec3 {
         Vec3(1.0, 0.0, 0.0)
     }
 }

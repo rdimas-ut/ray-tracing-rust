@@ -2,8 +2,6 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::f64::consts::PI;
 
-use rand::random;
-
 use crate::onb::Onb;
 use crate::rtweekend::random_double;
 use crate::vec3::Vec3;

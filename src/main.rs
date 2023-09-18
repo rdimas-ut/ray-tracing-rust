@@ -1,10 +1,8 @@
-use ray_tracing_rust::color;
 use ray_tracing_rust::material::Dialectric;
 use ray_tracing_rust::material::ScatterRecord;
 use ray_tracing_rust::pdf::HittablePdf;
 use ray_tracing_rust::pdf::MixturePdf;
 use ray_tracing_rust::pdf::SpherePdf;
-use ray_tracing_rust::rtweekend::random_double_range;
 use ray_tracing_rust::vec3::Vec3;
 use ray_tracing_rust::vec3::Point3;
 use ray_tracing_rust::vec3::Color;
@@ -22,7 +20,6 @@ use ray_tracing_rust::hittable::Hittable;
 use ray_tracing_rust::material;
 use ray_tracing_rust::material::DefaultMaterial;
 use ray_tracing_rust::material::Lambertian;
-use ray_tracing_rust::material::Metal;
 
 use ray_tracing_rust::hittable_list::HittableList;
 
@@ -35,9 +32,7 @@ use ray_tracing_rust::abox;
 use ray_tracing_rust::sphere::Sphere;
 
 use ray_tracing_rust::pdf::Pdf;
-use ray_tracing_rust::pdf::CosinePdf;
 
-use std::f64::consts::PI;
 use std::vec::Vec;
 
 use std::rc::Rc;
@@ -83,7 +78,7 @@ fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64, 
         return srec.attenuation * ray_color(&mut srec.skip_pdf_ray, background, world, depth-1, light_ptr)
     }
 
-    let mut light_pdf = Rc::new(RefCell::new(HittablePdf {objects: light_ptr.clone() as Rc<RefCell<dyn Hittable>>, origin: rec.p}));
+    let light_pdf = Rc::new(RefCell::new(HittablePdf {objects: light_ptr.clone() as Rc<RefCell<dyn Hittable>>, origin: rec.p}));
     let mut p = MixturePdf(light_pdf, srec.pdf_ptr);
 
     let mut scattered = Ray {origin: rec.p, direction: p.generate(), tm: r.time()};

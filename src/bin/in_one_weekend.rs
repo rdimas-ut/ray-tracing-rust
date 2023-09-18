@@ -4,22 +4,22 @@ use ray_tracing_rust::vec3::Color;
 
 use ray_tracing_rust::color::write_color;
 
-use ray_tracing_rust::camera::Camera;
+use ray_tracing_rust::camera_first_week::Camera;
 
-use ray_tracing_rust::ray::Ray;
+use ray_tracing_rust::ray_first_week::Ray;
 
-use ray_tracing_rust::hittable::HitRecord;
-use ray_tracing_rust::hittable::Hittable;
+use ray_tracing_rust::hittable_first_week::HitRecord;
+use ray_tracing_rust::hittable_first_week::Hittable;
 
-use ray_tracing_rust::material::DefaultMaterial;
-use ray_tracing_rust::material::Lambertian;
-use ray_tracing_rust::material::Metal;
-use ray_tracing_rust::material::Dialectric;
-use ray_tracing_rust::material::Material;
+use ray_tracing_rust::material_first_week::DefaultMaterial;
+use ray_tracing_rust::material_first_week::Lambertian;
+use ray_tracing_rust::material_first_week::Metal;
+use ray_tracing_rust::material_first_week::Dialectric;
+use ray_tracing_rust::material_first_week::Material;
 
-use ray_tracing_rust::hittable_list::HittableList;
+use ray_tracing_rust::hittable_list_first_week::HittableList;
 
-use ray_tracing_rust::sphere::Sphere;
+use ray_tracing_rust::sphere_first_week::Sphere;
 
 use ray_tracing_rust::rtweekend::random_double;
 use ray_tracing_rust::rtweekend::random_double_range;
@@ -29,7 +29,7 @@ use std::vec::Vec;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64) -> Color {
+fn ray_color(r: &Ray, world: &mut dyn Hittable, depth: u64) -> Color {
     let mut rec: HitRecord = HitRecord {
         p: Point3(0.0, 0.0, 0.0),
         normal: Vec3(0.0, 0.0, 0.0),
@@ -45,19 +45,17 @@ fn ray_color(r: &Ray, background: &Color, world: &mut dyn Hittable, depth: u64) 
         return Color(0.0, 0.0, 0.0);
     }
 
-    if !world.hit(r, 0.001, f64::INFINITY, &mut rec) {
-        return *background;    
+    if world.hit(&r, 0.001, f64::INFINITY, &mut rec) {
+        let mut scattered: Ray = Ray {origin: Point3(0.0, 0.0, 0.0), direction: Vec3(0.0, 0.0, 0.0), tm: 0.0};
+        let mut attenuation: Color = Color(0.0, 0.0, 0.0);
+        if rec.mat_ptr.borrow().scatter(r, &rec, &mut attenuation, &mut scattered) {
+            return attenuation * ray_color(&scattered, world, depth-1);
+        }
+        return Color(0.0, 0.0, 0.0);
     }
-
-    let mut scattered: Ray = Ray {origin: Point3(0.0, 0.0, 0.0), direction: Vec3(0.0, 0.0, 0.0), tm: 0.0};
-    let mut attenuation: Color = Color(0.0, 0.0, 0.0);
-    let emitted = rec.mat_ptr.borrow().emitted(rec.u, rec.v, &rec.p);
-
-    if !rec.mat_ptr.borrow().scatter(r, &rec, &mut attenuation, &mut scattered) {
-        return emitted;
-    }
-
-    return emitted + attenuation * ray_color(&scattered, background, world, depth-1);
+    let unit_direction: Vec3 = Vec3::unit_vector(r.direction());
+    let t = 0.5*(unit_direction.y() + 1.0);
+    (1.0-t)*Color(1.0, 1.0, 1.0) + t*Color(0.5, 0.7, 1.0)
 }
 
 fn random_scene() -> HittableList {
@@ -113,7 +111,7 @@ fn main() {
         let aspect_ratio: f64 = 16.0/9.0;
         let image_width: u64 = 1200;
         let image_height: u64 = (image_width as f64/aspect_ratio) as u64;
-        let samples_per_pixel: u64 = 10;
+        let samples_per_pixel: u64 = 500;
         const MAX_DEPTH: u64 = 50;
     
         // World
@@ -125,10 +123,8 @@ fn main() {
         let vup = Vec3(0.0, 1.0, 0.0);
         let dist_to_focus: f64 = 10.0;
         let aperture: f64 = 0.1;
-        
-        let background: Color = Color(0.70, 0.80, 1.00);
 
-        let cam: Camera = Camera::new(lookfrom, lookat, vup, 20.0, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0); 
+        let cam: Camera = Camera::new(lookfrom, lookat, vup, 20.0, aspect_ratio, aperture, dist_to_focus, 0.0, 0.0); 
         // Render
         print!("P3\n{} {}\n255\n", image_width, image_height);
         for j in (0..image_height).rev() {
@@ -139,7 +135,7 @@ fn main() {
                     let u: f64 = (i as f64 + random_double()) / (image_width - 1) as f64;
                     let v: f64 = (j as f64 + random_double()) / (image_height - 1) as f64;
                     let r: Ray = cam.get_ray(u, v);
-                    pixel_color += ray_color(&r, &background, &mut world, MAX_DEPTH);
+                    pixel_color += ray_color(&r, &mut world, MAX_DEPTH);
                 }
                 write_color(pixel_color, samples_per_pixel);
             }

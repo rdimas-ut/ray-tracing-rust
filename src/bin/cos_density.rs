@@ -1,8 +1,6 @@
 use std::f64::consts::PI;
 use ray_tracing_rust::vec3::{Vec3, random_cosine_direction};
 
-use ray_tracing_rust::rtweekend::random_double;
-
 fn f(d: &Vec3) -> f64 {
     let cos_theta: f64 = d.z();
     cos_theta*cos_theta*cos_theta

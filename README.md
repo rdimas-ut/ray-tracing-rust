@@ -2,7 +2,13 @@
 
 Ray tracer written/translated from the C++ code in [Ray Tracing in One Weekend](https://raytracing.github.io/books/RayTracingInOneWeekend.html) book. 
 
-*The binary files to build and run the code for the first and second book are currently not functional due to refactoring done in the third book to key dependencies*
+*use the following commands to get the final product for each book*
+
+```
+cargo run --bin "in_one_weekend" > a.ppm
+cargo run --bin "the_next_week" > b.ppm
+cargo run --bin "the_rest_of_your_life" > c.ppm
+```
 
 Final render scene is shown below. All other renders made while working through the book can be found in output folder in ppm and png format. Exports in png were created with gimp.
 
